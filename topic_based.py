@@ -65,10 +65,14 @@ nx.draw_networkx_labels(G, pos)
 plt.axis('off')
 plt.show()
 
+# Find top 5% of influencers: Find max centrality, and go through all centrality values to get list of those meeting 75% of that centrality value
 
-# Find display method that makes arrows go from one to the other
-# Avoid line collisions
 
+
+"""
+Find display method that makes arrows go from one to the other
+Avoid line collisions
+"""
 
 
 
