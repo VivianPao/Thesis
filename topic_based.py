@@ -1,23 +1,20 @@
 
 import twint
-import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
 
-TWEET_LIM_PER_SEARCH = 500
+TWEET_LIM_PER_SEARCH = 20
 FROM = 0
 TO = 1
 
-## TOPIC-CENTRIC
-
-def prepareForSociogram(listOfDFs):
-	finalData = pd.concat(listOfDFs,ignore_index = True)
-	finalData['Link'] = [1] * len(finalData.index)
-	return finalData
+def addToDict(dictName,keyValue):
+	if keyValue not in dictName:
+		dictName[keyValue] = 1
+	else:
+		dictName[keyValue] += 1
 
 # Based on the posts of a topic, find all the users that have mentioned a particular person on a topic (or no topic)
 def findMentioning(topic):
-
-	# Initialisation with the topic
 	c = twint.Config()
 	c.Limit = TWEET_LIM_PER_SEARCH
 	c.Pandas = True
@@ -28,20 +25,50 @@ def findMentioning(topic):
 	collectedData = twint.storage.panda.Tweets_df	# Dataframe of series!
 	mentions = collectedData.loc[:,('reply_to')]
 
-	mentionsArray = []
-
+	mentionsDict = {}	# Key: edge tuple. Value: weight
+	usersDict = {}	# Key: username. Value: How many times appeared
 	for row in range(len(mentions)):
-		currentUser = mentions[row][FROM]['username']
 		for nthMention in range(TO,len(mentions[row])):	# For each mentioned user, create a new link to the poster
-			mentionsArray.append([currentUser,mentions[row][nthMention]['username']])
+			source = mentions[row][FROM]['username']
+			target = mentions[row][nthMention]['username']
+			linkTuple = (source,target)
 
-	sourceData = [row[FROM] for row in mentionsArray]	# Create new array from the 1st column
-	targetData = [row[TO] for row in mentionsArray]		# Create new array from the 2nd column
-	finalData = pd.DataFrame({'Source': sourceData,'Target': targetData})
+			addToDict(mentionsDict,linkTuple)
+			addToDict(usersDict,source)
+			addToDict(usersDict,target)
 
-	return finalData
+	return (usersDict,mentionsDict)
 
-mention = findMentioning("westconnex")#"akatsuki no yona")
-finalTable = prepareForSociogram([mention])
-finalTable.to_csv("sociogramCSV.csv",index = False)
-print(finalTable)
+# Getting Twint values
+nodesDict = {}
+edgesDict = {}
+nodesDict,edgesDict = findMentioning("akatsuki no yona")
+nodes = list(nodesDict.keys())
+edges = list(edgesDict.keys())
+
+# Setting up the graph
+G = nx.MultiDiGraph()
+G.add_nodes_from(nodes)	# Determines the order of nodes
+G.add_edges_from(edges)	# Determines the order of edges
+pos = nx.spring_layout(G) # positions for all nodes
+
+# Calculate the node sizes and line widths
+nodeSizes = list(nx.degree_centrality(G).values())
+nodeSizes = [nodeVal*500 for nodeVal in nodeSizes]	# Multiply all node sizes by 500 to increase scale
+edgeWeight = list(edgesDict.values())
+edgeWeight = [edgeVal*2 for edgeVal in edgeWeight]	# Multiply all line widths by 2 to increase scale
+
+# Drawing features
+nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes)
+nx.draw_networkx_edges(G, pos, G.edges(),width=edgeWeight)
+nx.draw_networkx_labels(G, pos)
+plt.axis('off')
+plt.show()
+
+
+# Find display method that makes arrows go from one to the other
+# Avoid line collisions
+
+
+
+
