@@ -144,9 +144,14 @@ for i in range(len(nodes)):
 
 # DRAW ***************************************************************
 # Drawing features
+f = plt.figure()
+plt.axis('off')
+plt.title(TOPIC.title())
+
 nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes,edgecolors='k',node_color=nodeColor)
 nx.draw_networkx_edges(G, pos, G.edges(),width=edgeWeight,alpha=0.6)
 nx.draw_networkx_labels(G, pos, labels=majorLabels, font_size=MAJOR_LABEL_SIZE)
+f.savefig(TOPIC.title() + ' sociogram major.jpg')
 
 # If we want to show minor labels, create dictionary to store them all and adjust size
 if SHOW_MINOR_LABELS is True:
@@ -157,9 +162,9 @@ if SHOW_MINOR_LABELS is True:
 			minorLabels[name] = nodes[i]
 	nx.draw_networkx_labels(G, pos, labels=minorLabels, font_size=MINOR_LABEL_SIZE)
 
-plt.axis('off')
-plt.show()
+f.savefig(TOPIC.title() + ' sociogram all.jpg')
 
+plt.show()
 
 """
 Add time frame in which to scrape data: since and until
