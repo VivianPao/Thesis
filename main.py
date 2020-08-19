@@ -19,14 +19,14 @@ from sentimentAnalysis import *
 
 # User Input
 TOPIC = "western sydney airport"
-REUSE_DATA = True
+REUSE_DATA = False
 SHOW_SENTIMENT = True
 SHOW_MINOR_LABELS = False
 
 # Constants
 MAJOR_LABEL_SIZE = 12
 MINOR_LABEL_SIZE = 5
-TWEET_LIM = 100#00
+TWEET_LIM = 10000
 ASSESS_LIM = 20
 TOP_N = 10
 COLOR_POS = 'r'
@@ -152,6 +152,6 @@ if SHOW_MINOR_LABELS == True:
 		if i not in topIndices:
 			minorLabels[name] = nodes[i]
 	nx.draw_networkx_labels(G, pos, labels=minorLabels, font_size=MINOR_LABEL_SIZE)
-
-f.savefig(TOPIC.title() + " sociogram all.jpg")
+	f.savefig(TOPIC.title() + " sociogram all.jpg")
+	
 plt.show()
