@@ -2,12 +2,12 @@
 # CHECKOUT BRANCH
 # SOURCE THE VIRTUAL ENV
 
+# Dependencies: numpy, scipy, pandas, matplotlib, networkx, json
+
 # TO DO:
-# Show nodes on the top
 # Add time frame in which to scrape data: since and until
-# ----------------
-# COSMETIC:
-# Find display method that makes arrows go from one to the other
+# Fix sentiment analysis
+# ---------------------------------------------------------------
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -19,16 +19,16 @@ from sentimentAnalysis import *
 
 # User Input
 TOPIC = "western sydney airport"
-REUSE_DATA = False
+REUSE_DATA = True
 SHOW_SENTIMENT = True
 SHOW_MINOR_LABELS = False
 
 # Constants
-MAJOR_LABEL_SIZE = 12
-MINOR_LABEL_SIZE = 5
 TWEET_LIM = 10000
 ASSESS_LIM = 20
 TOP_N = 10
+MAJOR_LABEL_SIZE = 12
+MINOR_LABEL_SIZE = 5
 COLOR_POS = 'r'
 COLOR_NEU = 'y'
 COLOR_NEG = 'g'
@@ -40,13 +40,13 @@ COLOR_DEFAULT = 'w'
 # Getting Twint values
 if REUSE_DATA == True:
 	with open('nodes.json', 'r') as f:
-	    nodes = json.load(f)
+	    nodes = json.load(f)	# List
 	with open('edges.json', 'r') as f:
-	    edges = json.load(f)
+	    edges = json.load(f)	# List
 	with open('edgeWeight.json', 'r') as f:
-	    edgeWeight = json.load(f)
+	    edgeWeight = json.load(f)	# List
 	with open('majorTweets.json', 'r') as f:
-	    majorTweets = json.load(f)
+	    majorTweets = json.load(f)	# Dict
 else:
 	nodesDict = {}
 	edgesDict = {}
@@ -61,7 +61,8 @@ else:
 G = nx.MultiDiGraph()
 G.add_nodes_from(nodes)	# Determines the order of nodes
 G.add_edges_from(edges)	# Determines the order of edges
-pos = nx.spring_layout(G) # positions for all nodes
+# pos = nx.kamada_kawai_layout(G) # positions for all nodes... Adds a LOT of time
+pos = nx.spring_layout(G) # Faster, less insightful layout
 
 # ***************************************************************
 # CALCULATING IMPORTANT FEATURES
@@ -78,10 +79,19 @@ if REUSE_DATA == False and SHOW_SENTIMENT == True:
 		majorTweets[name] = tweets
 
 # Print names of major users
+stringTopN = ""
 for rank in range(len(topIndices)):
 	index = topIndices[rank]
 	name = nodes[index]
-	print("MAJOR USER "+str(rank+1)+":",name)
+	stringTopN = stringTopN + "MAJOR USER "+str(rank+1)+":"+str(name)+"\n"
+print(stringTopN)
+
+# Writing details to text file
+with open("info_summary.txt", "w") as f:
+	summary = "TOPIC: %s\nTWEET_LIM: %d\nASSESS_LIM: %d\nTOP_N: %d\n\n" % (TOPIC,TWEET_LIM,ASSESS_LIM,TOP_N)
+	f.write(summary)
+with open("info_summary.txt", "a") as f:
+	f.write(stringTopN)
 
 # ***************************************************************
 # SAVE ALL DATA
@@ -95,13 +105,20 @@ if REUSE_DATA == False:
 	    json.dump(majorTweets,f)
 	with open("edgeWeight.json", "w") as f:
 	    json.dump(list(edgesDict.values()),f)	# Edge weight that gets calculated again later
+	
+	# Writing details to text file
+	with open("info_summary.txt", "w") as f:
+		summary = "TOPIC: %s\nTWEET_LIM: %d\nASSESS_LIM: %d\nTOP_N: %d\n\n" % (TOPIC,TWEET_LIM,ASSESS_LIM,TOP_N)
+		f.write(summary)
+	with open("info_summary.txt", "a") as f:
+		f.write(stringTopN)
 
 # ***************************************************************
 # CALCULATE VISUAL SOCIOGRAM FEATURES
 # ***************************************************************
 
 # NODE SIZE
-nodeSizes = [nodeVal*1000 for nodeVal in centralityMeasure]	# Multiply all node sizes by 500 to increase scale
+nodeSizes = [nodeVal*10000 for nodeVal in centralityMeasure]	# Multiply all node sizes by 500 to increase scale
 
 # EDGE WEIGHT
 if REUSE_DATA == False:
@@ -138,8 +155,8 @@ f = plt.figure()
 plt.axis('off')
 plt.title(TOPIC.title(),fontweight="bold")
 
-nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes,edgecolors='k',node_color=nodeColor)
 nx.draw_networkx_edges(G, pos, G.edges(),width=edgeWeight,alpha=0.6)
+nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes,edgecolors='k',node_color=nodeColor)
 nx.draw_networkx_labels(G, pos, labels=majorLabels, font_size=MAJOR_LABEL_SIZE)
 
 f.savefig(TOPIC.title() + " sociogram major.jpg")
@@ -153,5 +170,5 @@ if SHOW_MINOR_LABELS == True:
 			minorLabels[name] = nodes[i]
 	nx.draw_networkx_labels(G, pos, labels=minorLabels, font_size=MINOR_LABEL_SIZE)
 	f.savefig(TOPIC.title() + " sociogram all.jpg")
-	
+
 plt.show()
