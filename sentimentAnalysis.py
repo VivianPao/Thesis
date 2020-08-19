@@ -1,43 +1,19 @@
 
-# Sentiment Analysis Tool
+from textblob import TextBlob
 
-# Considerations:
-# Set up: Weighted sentiment for words. Perhaps use dictionary
-# Preprocessing: Spelling, punctuation, capitalisation variations
-# Processing: Change check to allow you to check how many times a word comes up (may be more than once)
-# Combination of words, e.g. 'not happy, unhappy', characters: "angry!"
+def calcTextSentiment(text):
+	text = TextBlob(text)
+	analysis = text.sentiment.polarity
+	return analysis
 
-# ********************** FUNCTIONS ************************
-
-# Check if a small string is in a big string
-def __checkSubstring__(text,substring):
-	if substring in text:
-		return 1
+def calcUserSentiment(listOfStrings):
+	sentiment = 0	# Initial sentiment of 0
+	if len(listOfStrings) == 0:
+		return sentiment
 	else:
-		return 0
+		# Calculate individual string sentiment and then get the average
+		for string in listOfStrings:
+			sentiment += calcTextSentiment(string)
+		sentiment /= len(listOfStrings)
+		return sentiment
 
-# Calculate how many of the words in the wordPool are in the sentence
-def calcScore(text,wordBank):
-	score = 0
-	for word in wordBank:
-		score += __checkSubstring__(text,word)
-	return score
-
-# Add the positive and negative scores together (with the negative scores being negative numbers)
-# Positive/ negative sign of the sentiment score reflects sentiment
-def calcSentiment(posScore,negScore):
-	total = posScore - negScore
-	return total
-
-# ********************** MAIN ************************
-
-sentence = "I'm not happy!"
-
-posPool = ["happy","excited","glad"]
-negPool = ["sad","angry","upset"]
-
-posScore = calcScore(sentence,posPool)
-negScore = calcScore(sentence,negPool)
-sentiment = calcSentiment(posScore,negScore)
-
-print("Sentiment score:",sentiment)
