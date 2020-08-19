@@ -61,8 +61,8 @@ else:
 G = nx.MultiDiGraph()
 G.add_nodes_from(nodes)	# Determines the order of nodes
 G.add_edges_from(edges)	# Determines the order of edges
-# pos = nx.kamada_kawai_layout(G) # positions for all nodes... Adds a LOT of time
-pos = nx.spring_layout(G) # Faster, less insightful layout
+pos = nx.kamada_kawai_layout(G) # positions for all nodes... Adds a LOT of time
+# pos = nx.spring_layout(G) # Faster, less insightful layout
 
 # ***************************************************************
 # CALCULATING IMPORTANT FEATURES
@@ -85,13 +85,6 @@ for rank in range(len(topIndices)):
 	name = nodes[index]
 	stringTopN = stringTopN + "MAJOR USER "+str(rank+1)+":"+str(name)+"\n"
 print(stringTopN)
-
-# Writing details to text file
-with open("info_summary.txt", "w") as f:
-	summary = "TOPIC: %s\nTWEET_LIM: %d\nASSESS_LIM: %d\nTOP_N: %d\n\n" % (TOPIC,TWEET_LIM,ASSESS_LIM,TOP_N)
-	f.write(summary)
-with open("info_summary.txt", "a") as f:
-	f.write(stringTopN)
 
 # ***************************************************************
 # SAVE ALL DATA
