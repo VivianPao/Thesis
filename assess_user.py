@@ -5,10 +5,7 @@ import networkx as nx
 import numpy as np
 from textblob import TextBlob
 
-ASSESS_LIM_PER_SEARCH = 20
-
-user = "TheEllenShow"
-topic = "kind"
+ASSESS_LIM_PER_SEARCH = 5
 
 def calcTextSentiment(text):
 	text = TextBlob(text)
@@ -17,10 +14,15 @@ def calcTextSentiment(text):
 
 def calcUserSentiment(listOfStrings):
 	sentiment = 0
-	for string in listOfStrings:
-		sentiment += calcTextSentiment(string)
-	sentiment /= len(listOfStrings)
-	return sentiment
+
+	if len(listOfStrings) == 0:
+		return sentiment
+	else:
+		# Calculate individual string sentiment and then get the average
+		for string in listOfStrings:
+			sentiment += calcTextSentiment(string)
+		sentiment /= len(listOfStrings)
+		return sentiment
 
 def getTweetsFrom(user,topic):
 	# Warning, Twint is VERY slow when getting tweets from specific users
@@ -32,24 +34,25 @@ def getTweetsFrom(user,topic):
 	c.Search = topic
 	twint.run.Search(c)
 
+	# May come back blank...
 	collectedData = twint.storage.panda.Tweets_df	# Dataframe of series!
-	tweets = collectedData['tweet'].astype(str).tolist()
+	if collectedData.empty == False:
+		tweets = collectedData['tweet'].astype(str).tolist()
+	else:
+		tweets  = []
+
+	# WRITE LIST TO A TEXT FILE. VARIABLE FILE NAME
+	with open(user+'.txt', 'w') as f:
+	    for item in tweets:
+	        f.write("%s\n" % item)
+
 	return tweets
 
-tweets = getTweetsFrom(user,topic)
-userSentiment = calcUserSentiment(tweets)
-
-"""
-nodeColor = {}
-# Make default colour white somehow... or just iterate through all and make the non-major ones white
-if sentiment > -0.1 and sentiment < 0.1:	# If sentiment close to 0, negligible. Neutral outlook
-	nodeColor[user].append(white)
-elif:
-	nodeColor[user].append(green)
-else:
-	nodeColor[user].append(red)
-# Make node edge black
-"""
+if __name__ == "__main__":
+	user = "JAPANFESS"
+	topic = "akatsuki no yona"
+	tweets = getTweetsFrom(user,topic)
+	userSentiment = calcUserSentiment(tweets)
 
 
 # --> Map to colours!

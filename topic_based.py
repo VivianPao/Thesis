@@ -6,14 +6,17 @@ import twint
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from assess_user import *
+
+TOPIC = "west connex"
 
 SHOW_MINOR_LABELS = False
 MAJOR_LABEL_SIZE = 12
 MINOR_LABEL_SIZE = 5
 
-TWEET_LIM_PER_SEARCH = 200
+TWEET_LIM_PER_SEARCH = 100
 
-TOP_N = 10
+TOP_N = 3
 
 def __deleteElement__(givenArray,givenVal):
 	returnArray = []
@@ -84,7 +87,7 @@ def findMentioning(topic):
 # Getting Twint values
 nodesDict = {}
 edgesDict = {}
-nodesDict,edgesDict = findMentioning("akatsuki no yona")
+nodesDict,edgesDict = findMentioning(TOPIC)
 nodes = list(nodesDict.keys())
 edges = list(edgesDict.keys())
 
@@ -96,7 +99,7 @@ pos = nx.spring_layout(G) # positions for all nodes
 
 # Calculate the node sizes and line widths
 centralityMeasure = list(nx.degree_centrality(G).values())
-nodeSizes = [nodeVal*500 for nodeVal in centralityMeasure]	# Multiply all node sizes by 500 to increase scale
+nodeSizes = [nodeVal*1000 for nodeVal in centralityMeasure]	# Multiply all node sizes by 500 to increase scale
 edgeWeight = list(edgesDict.values())
 edgeWeight = [edgeVal*2 for edgeVal in edgeWeight]	# Multiply all line widths by 2 to increase scale
 
@@ -104,14 +107,31 @@ edgeWeight = [edgeVal*2 for edgeVal in edgeWeight]	# Multiply all line widths by
 topIndices = findTopNindices(centralityMeasure,TOP_N)
 
 # Label only the top N nodes.
-majorLabels = {}	# Create a dictionary with only the major node labels
+majorLabels = {}	# Create a dictionary with only the major node labels... probably don't need to iterate over whole thing.
+for i in topIndices:
+	name = nodes[i]
+	majorLabels[name] = name
+
+nodeColor = []
 for i in range(len(nodes)):
 	name = nodes[i]
+
 	if i in topIndices:
-		majorLabels[name] = nodes[i] # Label each node with its own name
+		print("TOP PERSON: ",name)
+		tweets = getTweetsFrom(name,TOPIC)
+		userSentiment = calcUserSentiment(tweets)
+
+		if userSentiment == 0:
+			nodeColor.append('b')
+		elif userSentiment > 0:
+			nodeColor.append('g')
+		else:
+			nodeColor.append('r')
+	else:
+		 nodeColor.append('w')
 
 # Drawing features
-nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes)
+nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes,edgecolors='k',node_color=nodeColor)
 nx.draw_networkx_edges(G, pos, G.edges(),width=edgeWeight,alpha=0.6)
 nx.draw_networkx_labels(G, pos, labels=majorLabels, font_size=MAJOR_LABEL_SIZE)
 
@@ -129,14 +149,13 @@ plt.show()
 
 
 """
+
+WRITE THE TWEETS FOUND INTO A CSV FILE UNDER THEIR USERNAME
+
 Next steps:
+Draw nodes with colours representing their sentiment. Similar to what you did with the labels. Draw in batches?
 
-Find most important tweets representing the users: Given a user and a topic/ tag, find the most popular tweet. Extract the content.
-Find sentiment of that tweet.
-Draw nodes with colours representing their sentiment. Similar to what you did with the labels. Draw in batches.
-
-Add time frame in which to scrape data
-
+Add time frame in which to scrape data: since and until
 ----------------
 
 COSMETIC:
@@ -144,5 +163,3 @@ Find display method that makes arrows go from one to the other
 Avoid line collisions
 
 """
-
-
