@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 from textblob import TextBlob
 
-ASSESS_LIM_PER_SEARCH = 5
+ASSESS_LIM_PER_SEARCH = 20
 
 def calcTextSentiment(text):
 	text = TextBlob(text)
@@ -54,12 +54,5 @@ if __name__ == "__main__":
 	tweets = getTweetsFrom(user,topic)
 	userSentiment = calcUserSentiment(tweets)
 
-
-# --> Map to colours!
-# 1. Identify how to input colours to draw nodes
-# 2. Map the sentiment to node values
-# 3. Feed this in and draw on networkx
-# 4. Apply for all top 50 users and visualise the network
-# 5. Save all the user's tweets into a csv with a file for their name
 # 6. Implement for particular dates
 # Host online

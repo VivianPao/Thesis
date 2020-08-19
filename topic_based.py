@@ -8,16 +8,17 @@ import networkx as nx
 import numpy as np
 from assess_user import *
 
-TOPIC = "west connex"
+TOPIC = "western sydney airport"
 
 SHOW_MINOR_LABELS = False
 MAJOR_LABEL_SIZE = 12
 MINOR_LABEL_SIZE = 5
 
-TWEET_LIM_PER_SEARCH = 100
+TWEET_LIM_PER_SEARCH = 10000
 
-TOP_N = 3
+TOP_N = 10
 
+# Given an array and a value, delete the first instance of the value from the array
 def __deleteElement__(givenArray,givenVal):
 	returnArray = []
 	for val in givenArray:
@@ -25,6 +26,7 @@ def __deleteElement__(givenArray,givenVal):
 			returnArray.append(val)
 	return returnArray
 
+# Given an array, find the indices of the top n values
 def findTopNindices(givenArray,n):
 	# If n is larger than the length of the array, set 'n' to the length
 	if n > len(givenArray):
@@ -49,6 +51,7 @@ def findTopNindices(givenArray,n):
 
 	return ordered
 
+# If the user has been seen before, increment their count. If not, add them into the dictionary and set count to 1.
 def addToDict(dictName,keyValue):
 	if keyValue not in dictName:
 		dictName[keyValue] = 1
@@ -84,6 +87,9 @@ def findMentioning(topic):
 
 	return (usersDict,mentionsDict)
 
+
+
+# TWITTER SCRAPING ***************************************************************
 # Getting Twint values
 nodesDict = {}
 edgesDict = {}
@@ -91,6 +97,7 @@ nodesDict,edgesDict = findMentioning(TOPIC)
 nodes = list(nodesDict.keys())
 edges = list(edgesDict.keys())
 
+# SOCIOGRAM SET UP ***************************************************************
 # Setting up the graph
 G = nx.MultiDiGraph()
 G.add_nodes_from(nodes)	# Determines the order of nodes
@@ -106,21 +113,26 @@ edgeWeight = [edgeVal*2 for edgeVal in edgeWeight]	# Multiply all line widths by
 # Find the node indices corresponding to the top N users
 topIndices = findTopNindices(centralityMeasure,TOP_N)
 
+# LABEL ***************************************************************
 # Label only the top N nodes.
 majorLabels = {}	# Create a dictionary with only the major node labels... probably don't need to iterate over whole thing.
 for i in topIndices:
 	name = nodes[i]
 	majorLabels[name] = name
 
+# NODE COLOR ***************************************************************
+# Find sentiment of the major users and set the appropriate node color
 nodeColor = []
 for i in range(len(nodes)):
 	name = nodes[i]
 
+	# Only for the top n users, look into tweets and find sentiment
 	if i in topIndices:
 		print("TOP PERSON: ",name)
 		tweets = getTweetsFrom(name,TOPIC)
 		userSentiment = calcUserSentiment(tweets)
 
+		# Append the appropriate colour to show sentiment
 		if userSentiment == 0:
 			nodeColor.append('b')
 		elif userSentiment > 0:
@@ -130,6 +142,7 @@ for i in range(len(nodes)):
 	else:
 		 nodeColor.append('w')
 
+# DRAW ***************************************************************
 # Drawing features
 nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes,edgecolors='k',node_color=nodeColor)
 nx.draw_networkx_edges(G, pos, G.edges(),width=edgeWeight,alpha=0.6)
@@ -149,15 +162,8 @@ plt.show()
 
 
 """
-
-WRITE THE TWEETS FOUND INTO A CSV FILE UNDER THEIR USERNAME
-
-Next steps:
-Draw nodes with colours representing their sentiment. Similar to what you did with the labels. Draw in batches?
-
 Add time frame in which to scrape data: since and until
 ----------------
-
 COSMETIC:
 Find display method that makes arrows go from one to the other
 Avoid line collisions
