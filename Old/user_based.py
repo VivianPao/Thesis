@@ -122,6 +122,11 @@ def prepareForSociogram(listOfDFs):
 
 userOfInterest = "nowestconnex"
 
+# mentioning = findMentioning(userOfInterest,"")
+mentioners = findMentioners(userOfInterest,"")
+
+
+"""
 mentioners = findMentioners(userOfInterest,"")
 time.sleep(SLEEP_TIME)
 # followers = findFollowers(userOfInterest)
@@ -136,5 +141,5 @@ finalTable = prepareForSociogram([mentioners,mentioning])#,followers,following])
 # finalTable = finalTable.str.lower()
 finalTable.to_csv("sociogramCSV.csv",index = False)
 print(finalTable)
-
+"""
 

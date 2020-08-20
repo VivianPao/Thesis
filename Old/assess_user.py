@@ -5,7 +5,11 @@ import networkx as nx
 import numpy as np
 from textblob import TextBlob
 
+# Maximum number of tweets we'll use to calculate the user's overall sentiment
 ASSESS_LIM_PER_SEARCH = 20
+
+# FLAGS:
+# SAVE_TO_TEXT = True
 
 def calcTextSentiment(text):
 	text = TextBlob(text)
@@ -13,8 +17,7 @@ def calcTextSentiment(text):
 	return analysis
 
 def calcUserSentiment(listOfStrings):
-	sentiment = 0
-
+	sentiment = 0	# Initial sentiment of 0
 	if len(listOfStrings) == 0:
 		return sentiment
 	else:
@@ -34,11 +37,10 @@ def getTweetsFrom(user,topic):
 	c.Search = topic
 	twint.run.Search(c)
 
-	# May come back blank...
 	collectedData = twint.storage.panda.Tweets_df	# Dataframe of series!
 	if collectedData.empty == False:
 		tweets = collectedData['tweet'].astype(str).tolist()
-	else:
+	else:	# If there wasn't any data, return an empty list
 		tweets  = []
 
 	# WRITE LIST TO A TEXT FILE. VARIABLE FILE NAME
@@ -48,11 +50,9 @@ def getTweetsFrom(user,topic):
 
 	return tweets
 
+# Example of usage
 if __name__ == "__main__":
-	user = "JAPANFESS"
-	topic = "akatsuki no yona"
+	user = "TheEllenShow"
+	topic = "kindness"
 	tweets = getTweetsFrom(user,topic)
 	userSentiment = calcUserSentiment(tweets)
-
-# 6. Implement for particular dates
-# Host online

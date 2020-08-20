@@ -33,16 +33,24 @@ print(nodeSizes)
 # Store edges as dictionary with tuples (edges) as key, weight as value
 
 # Check if the dictionary behaviour is the same when you use strings as keys/ node names instead
+TOPIC = "western sydney airport"
+f = plt.figure()
+plt.axis('off')
+plt.title(TOPIC.title())
 
-nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes)
+nx.draw_networkx_nodes(G, pos, G.nodes(),node_size=nodeSizes, node_color=['r','g','w','b','b'],edgecolors='k')
+f.savefig(TOPIC.title() + ' sociogram1.jpg')
+
 nx.draw_networkx_edges(G, pos, G.edges(),width=[1,10,3])
 
 # Think of how to change the colour of each node based on sentiment
 # Find reasonable way to label only the important nodes... check centrality. If above 75% the max value, show, otherwise blank.
 nx.draw_networkx_labels(G, pos)
 
-plt.axis('off')
+f.savefig(TOPIC.title() + ' sociogram2.jpg')
+
 plt.show()
+
 
 
 

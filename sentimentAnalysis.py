@@ -7,7 +7,7 @@ def calcTextSentiment(text):
 	return analysis
 
 def calcUserSentiment(listOfStrings):
-	sentiment = 0	# Initial sentiment of 0
+	sentiment = 0	# Initial sentiment of 0 (neutral)
 	if len(listOfStrings) == 0:
 		return sentiment
 	else:

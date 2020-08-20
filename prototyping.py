@@ -1,12 +1,18 @@
 
-listOfItems = ['tohru','kyo','yuki','tohru']
+# GOAL: Save dictionary data to JSON file.
+# Load dictionary from JSON file
 
-# 2 Dictionaries... 1 to store node names, 1 to store edges.
-# First attempt: only store 
+import json
 
-def someFn():
-	return 99,256
+randomList = [1,2,3,4]
+with open("info_summary.txt", "w") as f:
+    f.write(str(randomList))
 
-a,b = someFn()
-print(a)
-print(b)
+# listOfDicts = []
+# with open('sample.json', 'w') as f:
+    # json.dump(randomList,f)
+
+# Read dictionary from JSON
+# with open('sample.json', 'r') as f:
+#     sample = json.load(f)
+# print(sample)

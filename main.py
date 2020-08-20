@@ -1,12 +1,15 @@
-
-# CHECKOUT BRANCH
-# SOURCE THE VIRTUAL ENV
+# TO SELF:
+# git checkout experiment_branch
+# source sna_env/bin/activate
 
 # Dependencies: numpy, scipy, pandas, matplotlib, networkx, json
 
 # TO DO:
-# Add time frame in which to scrape data: since and until
-# Fix sentiment analysis
+# - Add time frame in which to scrape data: since and until
+# - Fix sentiment analysis
+# - Add option to select type of centrality used to identify influential users
+# - Create option for MANUAL_SENTIMENT where you can edit a file to manually indicate whether
+# the top N users are positive or negative sentiment without reliance on the library.
 # ---------------------------------------------------------------
 
 import matplotlib.pyplot as plt
@@ -61,7 +64,7 @@ else:
 G = nx.MultiDiGraph()
 G.add_nodes_from(nodes)	# Determines the order of nodes
 G.add_edges_from(edges)	# Determines the order of edges
-pos = nx.kamada_kawai_layout(G) # positions for all nodes... Adds a LOT of time
+pos = nx.kamada_kawai_layout(G) # positions for all nodes... Adds a lot of time
 # pos = nx.spring_layout(G) # Faster, less insightful layout
 
 # ***************************************************************
@@ -142,7 +145,7 @@ if SHOW_SENTIMENT == True:
 			nodeColor[i] = COLOR_NEG
 
 # ***************************************************************
-# DRAW FEATURES & SAVE FIGURES
+# DRAW SOCIGRAM & SAVE FIGURES
 # ***************************************************************
 f = plt.figure()
 plt.axis('off')
