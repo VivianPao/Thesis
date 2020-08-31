@@ -1,5 +1,7 @@
 
 import twint
+import pandas as pd
+import numpy as np
 
 # If the user has been seen before, increment their count. If not, add them into the dictionary and set count to 1.
 def __addToDict__(dictName,keyValue):
@@ -9,50 +11,39 @@ def __addToDict__(dictName,keyValue):
 		dictName[keyValue] += 1
 
 # Based on the posts of a topic, find all the users that have mentioned a particular person on a topic (or no topic)
-def findMentioning(topic,tweetLimit):
-	FROM = 0
-	TO = 1
-	
+def scrapeTopic(topic,tweetLimit):
+
 	c = twint.Config()
 	c.Limit = tweetLimit
 	c.Pandas = True
 	c.Search = topic
-	c.Format = "{username} | {mentions}"
+	c.Format = "{username} -> {mentions}"
 	twint.run.Search(c)
 
-	collectedData = twint.storage.panda.Tweets_df	# Dataframe of series!
-	mentions = collectedData.loc[:,('reply_to')]
+	return twint.storage.panda.Tweets_df	# Dataframe of series!
 
-	mentionsDict = {}	# Key: edge tuple. Value: weight
-	usersDict = {}	# Key: username. Value: How many times appeared
-	for row in range(len(mentions)):
-		for nthMention in range(TO,len(mentions[row])):	# For each mentioned user, create a new link to the poster
-			source = mentions[row][FROM]['username']
-			target = mentions[row][nthMention]['username']
-			linkTuple = (source,target)
+# I: dataframe, O: dict
+def organiseData(df):
 
-			__addToDict__(mentionsDict,linkTuple)
-			__addToDict__(usersDict,source)
-			__addToDict__(usersDict,target)
+	# concat string tweets and list of dicts
+	df = df[['username','tweet','reply_to']]
+	df = df.groupby('username').aggregate(sum)
 
-	return (usersDict,mentionsDict)
+	# For each user/ row, rewrite the dictionary. key: mentioned users, val: weight
+	for row in range(len(df)):
+		username = df.iloc[row][0]
+		listOfDicts = df.iloc[row]['reply_to']
 
+		linkTo = dict()	# Create dict to store names of mentioned users
+		for aDict in listOfDicts:
+			mentionedUser = aDict['username']
+			if mentionedUser != username:
+				__addToDict__(linkTo,mentionedUser)
+		df.iloc[row]['reply_to'] = [linkTo]
 
-def getTweetsFrom(user,topic,tweetLimit):
-	# Warning, Twint is VERY slow when getting tweets from specific users
-	c = twint.Config()
-	c.Limit = tweetLimit
-	c.Pandas = True
-	c.Username = user
-	c.Format = "{username} | {tweet}"
-	c.Search = topic
-	twint.run.Search(c)
+	return df
 
-	collectedData = twint.storage.panda.Tweets_df	# Dataframe of series!
-	if collectedData.empty == False:
-		tweets = collectedData['tweet'].astype(str).tolist()
-	else:	# If there wasn't any data, return an empty list
-		tweets  = []
-		
-	return tweets
+# df = scrapeTopic("chicken",100)
+# df = organiseData(df)
+
 
