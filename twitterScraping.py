@@ -22,11 +22,11 @@ def organiseData(df):
 		username = df.iloc[row][0]
 		listOfDicts = df.iloc[row]['reply_to']
 
-		linkTo = dict()	# Create dict to store names of mentioned users
+		linkTo = dict()	# Create dict, keys as tuples of user -> mentioned user: weight
 		for aDict in listOfDicts:
 			mentionedUser = aDict['username']
 			if mentionedUser != username:
-				addToDict(linkTo,mentionedUser)
+				addToDict(linkTo,(username,mentionedUser))
 		df.loc[df.username == username,'reply_to'] = [linkTo]
 
 	return df
