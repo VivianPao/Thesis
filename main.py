@@ -12,16 +12,15 @@ TOPIC = "western sydney airport"
 TWEET_LIM = 100				# The number of tweets to scrape from Twitter before stopping.
 TOP_N = 10					# How many major users to identify. If TOP_N = 10, code names top 10 users.
 
-REUSE_DATA = True
+REUSE_DATA = False
 
 # ***************************************************************
 # TWITTER SCRAPING
 # ***************************************************************
 
 if REUSE_DATA == False:
-	collectedData1 = scrapeTopic(TOPIC,TWEET_LIM)
-	collectedData1.to_csv('data.csv',index=False)
-
+	collectedData = scrapeTopic(TOPIC,TWEET_LIM)
+	collectedData.to_csv('data.csv',index=False)
 else:
 	collectedData = pd.read_csv('data.csv')
 	weightedLinks = collectedData['reply_to'].tolist()	# Link of dictionaries
