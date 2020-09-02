@@ -16,7 +16,7 @@ CENTRALITY = {'in':IN_CEN,'out':OUT_CEN,'eigenvector':EIG_CEN,'closeness':CLOSE_
 # ***************************************************************
 # USER INPUTS
 # ***************************************************************
-reuseData = False
+reuseData = True
 tweetLim = 100	# Max number of tweets to scrape
 
 topic = "western sydney airport"
@@ -49,10 +49,11 @@ mySociogram = Sociogram(collectedData)
 # Create figure and save as image
 f = plt.figure()
 plt.axis('off')
-plt.title(topic.title(),fontweight='bold')
+plt.title(topic.title() + ' ' + centralityType,fontweight='bold')
 mySociogram.calcFeatures(topN,centralitySelected)
 mySociogram.drawNetwork()
 f.savefig(topic.title() + ' ' + centralityType + ' sociogram.jpg')
 
 mySociogram.saveSummary(topic.title() + ' ' + centralityType + ' summary.csv') # (topic +' summary.csv')
 
+input("Press Enter to close all plots...")

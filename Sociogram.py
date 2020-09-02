@@ -59,7 +59,7 @@ class Sociogram:
 		nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='k')
 		nx.draw_networkx_labels(self.G,pos,self.labels)	# Implement separated label commands for different centrality
 		nx.draw_networkx_edges(self.G,pos,self.G.edges(),width=self.edgeWidths)
-		plt.show()
+		plt.show(block=False)
 
 	def calcColors(self,sentiment):	# Given list of sentiment floats, generate list of colors for nodes
 		colorList = ['r','y','g','w']
