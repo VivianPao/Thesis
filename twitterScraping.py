@@ -1,7 +1,7 @@
 
 import twint
 import pandas as pd
-import numpy as np
+from sentimentAnalysis import *
 
 # If the user has been seen before, increment their count. If not, add them into the dictionary and set count to 1.
 def addToDict(dictName,keyValue):
@@ -10,24 +10,28 @@ def addToDict(dictName,keyValue):
 	else:
 		dictName[keyValue] += 1
 
-# I: dataframe, O: 
+# Return dataframe with sentiment analysis and edge + weight dictionary
 def organiseData(df):
 
-	# concat string tweets and list of dicts
-	df = df[['username','tweet','reply_to']]
-	df = df.groupby('username',as_index=False).aggregate(sum)
+	df = df[['username','tweet','reply_to']]	# concat string tweets and list of dicts
+	df = df.groupby('username',as_index=False).aggregate(sum)	# Group by username (merge duplicates)
 
 	# For each user/ row, rewrite the dictionary. key: mentioned users, val: weight
+	# Use the apply() pandas function to create a new row for the dictionary!
 	for row in range(len(df)):
 		username = df.iloc[row][0]
 		listOfDicts = df.iloc[row]['reply_to']
 
-		linkTo = dict()	# Create dict, keys as tuples of user -> mentioned user: weight
+		linkTo = {}	# Create dict, keys as tuples of user -> mentioned user: weight
 		for aDict in listOfDicts:
 			mentionedUser = aDict['username']
 			if mentionedUser != username:
 				addToDict(linkTo,(username,mentionedUser))
 		df.loc[df.username == username,'reply_to'] = [linkTo]
+
+	# Remove users that have no outgoing connection, i.e. empty dictionary in 'reply_to' column
+	df = df.drop(df[df.reply_to == {}].index)
+	df['sentiment'] = df['tweet'].apply(calcTextSentiment)	# Add sentiment column
 
 	return df
 
