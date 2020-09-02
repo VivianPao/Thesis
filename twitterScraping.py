@@ -36,16 +36,21 @@ def organiseData(df):
 	return df
 
 # Based on the posts of a topic, find all the users that have mentioned a particular person on a topic (or no topic)
-def scrapeTopic(topic,tweetLimit):
-
+def scrapeTopic(topic,tweetLimit,dates=None):
+# Dates in form ['YYYY-MM-DD','YYYY-MM-DD']
 	c = twint.Config()
 	c.Limit = tweetLimit
-	c.Pandas = True
 	c.Search = topic
+	c.Pandas = True
 	c.Format = "{username} -> {mentions}"
+
+	if dates != None:
+		[sinceDate,untilDate] = dates	
+		c.Since = sinceDate
+		c.Until = untilDate
+
 	twint.run.Search(c)
 
 	df = organiseData(twint.storage.panda.Tweets_df)
-
 	return df	# Dataframe of series!
 

@@ -1,24 +1,31 @@
  
 import pandas as pd
 import ast
-
 from twitterScraping import *
 from Sociogram import *
 
 # ***************************************************************
+# CONSTANTS
+# ***************************************************************
+[IN_CEN,OUT_CEN,EIG_CEN,CLOSE_CEN,BTWN_CEN] = range(0,5)
+CENTRALITY = {'in':IN_CEN,'out':OUT_CEN,'eigenvector':EIG_CEN,'closeness':CLOSE_CEN,'betweenness':BTWN_CEN}
+
+# ***************************************************************
 # USER INPUTS
 # ***************************************************************
-TOPIC = "western sydney airport"
-TWEET_LIM = 100
-TOP_N = 10
-
-REUSE_DATA = False
+reuseData = True
+topic = "western sydney airport"
+tweetLim = 100
+topN = 10
+centralityType = CENTRALITY['eigenvector']	# Choose from 'in','out','eigenvector','closeness','betweeness'
+dates = None
+# dates = ['2020-01-01','2020-02-01'] # Dates in form ['YYYY-MM-DD','YYYY-MM-DD']
 
 # ***************************************************************
 # TWITTER SCRAPING
 # ***************************************************************
-if REUSE_DATA == False:
-	collectedData = scrapeTopic(TOPIC,TWEET_LIM)
+if reuseData == False:
+	collectedData = scrapeTopic(topic,tweetLim,dates)
 	collectedData.to_csv('data.csv',index=False)
 else:	# Dicts by default in string format. Rewrite the column with real dicts.
 	collectedData = pd.read_csv('data.csv')
@@ -31,14 +38,16 @@ else:	# Dicts by default in string format. Rewrite the column with real dicts.
 # VISUALISATION
 # ***************************************************************
 mySociogram = Sociogram(collectedData)
-mySociogram.drawNetwork(TOP_N)
-mySociogram.saveSummary('summary.csv') # (TOPIC +' summary.csv')
 
+# Create figure and save as image
+f = plt.figure()
+plt.axis('off')
+plt.title(topic.title(),fontweight="bold")
+mySociogram.calcFeatures(topN,centralityType)
+mySociogram.drawNetwork()
+f.savefig(topic.title() + " sociogram major.jpg")
 
-
+mySociogram.saveSummary(topic.title() + 'summary.csv') # (topic +' summary.csv')
 
 # TO DO:
-# - Remove overlapping, get better layout
-# - Add time frame in which to scrape data: since and until
 # - Fix sentiment analysis
-# - Add option to select type of centrality used to identify influential users
