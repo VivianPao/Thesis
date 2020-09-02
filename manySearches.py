@@ -18,7 +18,7 @@ tweetLim = 10000	# Max number of tweets to scrape
 topN = 20		# Number of the top influential users to label on visualisation
 dates = None
 
-topicList = ['Warrick Lane redevelopment Blacktown','Stage 2 Blacktown Hospital','great northern highway Koodaideri Bridge']
+topicList = ['Karrinyup Shopping Centre Redevelopment','Stage 2 Blacktown Hospital','Warrick Lane redevelopment Blacktown','great northern highway Koodaideri Bridge']
 centralityList = ['in','out']
 
 # ***************************************************************
@@ -47,4 +47,6 @@ for topic in topicList:
 		f.savefig(topic.title() + ' ' + centralityType + ' sociogram.jpg')
 
 		mySociogram.saveSummary(topic.title() + ' ' + centralityType + ' summary.csv')
+
+input("Press Enter to close all plots...")
 

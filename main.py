@@ -16,12 +16,12 @@ CENTRALITY = {'in':IN_CEN,'out':OUT_CEN,'eigenvector':EIG_CEN,'closeness':CLOSE_
 # ***************************************************************
 # USER INPUTS
 # ***************************************************************
-reuseData = True
-tweetLim = 100	# Max number of tweets to scrape
+reuseData = False
+tweetLim = 1000	# Max number of tweets to scrape
 
-topic = "western sydney airport"
+topic = "covid-19"
 topN = 10		# Number of the top influential users to label on visualisation
-centralityType = 'eigenvector'	# Choose from 'in','out','eigenvector','closeness','betweeness'
+centralityType = 'in'	# Choose from 'in','out','eigenvector','closeness','betweeness'
 dates = None
 
 # dates = ['2020-01-01','2020-02-01'] # Dates in form ['YYYY-MM-DD','YYYY-MM-DD']
