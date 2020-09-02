@@ -34,7 +34,7 @@ else:
 
 mySociogram = Sociogram(collectedData)
 mySociogram.drawNetwork(TOP_N)
-mySociogram.saveSummary(TOPIC +' summary.csv')
+mySociogram.saveSummary('summary.csv') # (TOPIC +' summary.csv')
 
 # TO DO:
 # - Remove overlapping, get better layout
