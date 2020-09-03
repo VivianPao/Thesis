@@ -18,6 +18,14 @@ OUT_CEN = 1
 EIG_CEN = 2
 CLOSE_CEN = 3
 BTWN_CEN = 4
+
+IN_DEG_CEN = 0
+OUT_DEG_CEN = 1
+DEG_CEN = 2
+EIG_CEN = 3
+CLOSE_CEN = 4
+BTWN_CEN = 5
+
 OUT_MIN = 50
 OUT_MAX = 600
 
@@ -94,10 +102,12 @@ class Sociogram:
 		return [edges,edgeWeights]
 
 	def calcCentrality(self,centralityType):
-		if centralityType == IN_CEN:
+		if centralityType == IN_DEG_CEN:
 			return list(nx.in_degree_centrality(self.G).values())
-		elif centralityType == OUT_CEN:
+		elif centralityType == OUT_DEG_CEN:
 			return list(nx.out_degree_centrality(self.G).values())
+		elif centralityType == DEG_CEN:
+			return list(nx.degree_centrality(self.G).values())
 		elif centralityType == EIG_CEN:
 			return list(nx.eigenvector_centrality_numpy(self.G).values())
 			# The regular eigenvector_centrality() gives error when equal largest magnitude
