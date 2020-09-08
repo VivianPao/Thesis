@@ -30,7 +30,7 @@ def organiseData(df):
 		df.loc[df.username == username,'reply_to'] = [linkTo]
 
 	# Remove users that have no outgoing connection, i.e. empty dictionary in 'reply_to' column
-	df = df.drop(df[df.reply_to == {}].index)
+	# df = df.drop(df[df.reply_to == {}].index)
 	df['sentiment'] = df['tweet'].apply(calcTextSentiment)	# Add sentiment column
 
 	return df
