@@ -16,8 +16,8 @@ CENTRALITY = {'in degree':IN_DEG_CEN,'out degree':OUT_DEG_CEN,'degree':DEG_CEN,'
 # ***************************************************************
 # USER INPUTS
 # ***************************************************************
-reuseData = False
-tweetLim = 1000	# Max number of tweets to scrape
+reuseData = True
+tweetLim = 20	# Max number of tweets to scrape
 
 topic = "fruits basket"
 topN = 10		# Number of the top influential users to label on visualisation

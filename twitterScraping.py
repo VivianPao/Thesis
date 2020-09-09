@@ -13,6 +13,9 @@ def addToDict(dictName,keyValue):
 # Return dataframe with sentiment analysis and edge + weight dictionary
 def organiseData(df):
 
+	if df.empty:
+		return df
+
 	df = df[['username','tweet','reply_to']]	# concat string tweets and list of dicts
 	df = df.groupby('username',as_index=False).aggregate(sum)	# Group by username (merge duplicates)
 
@@ -42,7 +45,7 @@ def scrapeTopic(topic,tweetLimit,dates=None):
 	c.Limit = tweetLimit
 	c.Search = topic
 	c.Pandas = True
-	c.Format = "{username} -> {mentions}"
+	c.Format = "{date}: {username} -> {mentions}"
 
 	if dates != None:
 		[sinceDate,untilDate] = dates	
@@ -52,5 +55,6 @@ def scrapeTopic(topic,tweetLimit,dates=None):
 	twint.run.Search(c)
 
 	df = organiseData(twint.storage.panda.Tweets_df)
+
 	return df	# Dataframe of series!
 

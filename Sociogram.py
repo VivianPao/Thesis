@@ -45,6 +45,8 @@ class Sociogram:
 	def calcFeatures(self,topN,centralityType):
 		nodes = list(self.G.nodes())	# Save updated node list. Includes other mentioned users from edges
 		self.edgeWidths = [weight*0.5 for weight in self.edgeWeights]
+		self.edgeWidths = (self.edgeWidths-np.min(self.edgeWidths))/(np.max(self.edgeWidths)--np.min(self.edgeWidths)+0.001)*3 + 1
+		self.edgeWidths = self.edgeWidths/self.edgeWidths
 
 		# Calculate node size using centrality
 		centrality = self.calcCentrality(centralityType)
@@ -61,8 +63,8 @@ class Sociogram:
 		self.labels = self.calcLabels(topNUsers)
 
 	def drawNetwork(self):	# Add parameter as option to show minor labels
-		# pos = nx.spring_layout(self.G)
-		pos = nx.kamada_kawai_layout(self.G)
+		pos = nx.spring_layout(self.G)
+		# pos = nx.kamada_kawai_layout(self.G)
 		# pos = nx.fruchterman_reingold_layout(self.G)
 		nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='k')
 		nx.draw_networkx_labels(self.G,pos,self.labels)	# Implement separated label commands for different centrality
