@@ -8,7 +8,7 @@ from twitterScraping import *
 
 newData = True
 topN = 10
-dates = ['2006-01-01','2020-09-12']	# YYYY-MM-DD
+dates = ['2020-07-01','2020-09-12']	# YYYY-MM-DD
 topic = 'badgerys creek airport'
 centralityType = 'degree' # Choose from 'in degree','out degree','degree','eigenvector','closeness','betweenness'
 tweetLim = None
@@ -16,14 +16,12 @@ tweetLim = None
 # ************ MAIN ******************************************** 
 
 dateWindowList = [dates]
-dateWindowList = getMonthlyDates(dates[0],dates[1]) # Show network using these monthly date pairs
+# dateWindowList = getMonthlyDates(dates[0],dates[1]) # Show network using these monthly date pairs
 
 for dateWindow in dateWindowList:	# Loop through all windows in list
 	title = topic.title() + ' ' + dateWindow[0] + ' to ' + dateWindow[1]
-	if newData:
-		collectedData = scrapeTopic(topic,tweetLim,dateWindow)
-	else:
-		collectedData = readDataCSV('data ' + title + '.csv')
+	if newData: collectedData = scrapeTopic(topic,tweetLim,dateWindow)
+	else: collectedData = readDataCSV('data ' + title + '.csv')
 
 	if collectedData.empty:
 		print('No network for:',title)
@@ -34,6 +32,6 @@ for dateWindow in dateWindowList:	# Loop through all windows in list
 	mySociogram = Sociogram(collectedData,title,topN,centralityType)
 	mySociogram.saveSummary('summary ' + title + '.csv')
 	plt.savefig('sociogram ' + title + '.jpg')
-	# plt.show(block=False)
+	plt.show(block=False)
 
-# input("Press Enter to close all plots...")
+input("Press Enter to close all plots...")
