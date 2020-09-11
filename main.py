@@ -6,7 +6,7 @@ from twitterScraping import *
 
 # ************ USER INPUTS *************************************
 
-newData = False
+newData = True
 topN = 10
 dates = ['2006-01-01','2020-09-12']	# YYYY-MM-DD
 topic = 'badgerys creek airport'
@@ -26,16 +26,14 @@ for dateWindow in dateWindowList:	# Loop through all windows in list
 		collectedData = readDataCSV('data ' + title + '.csv')
 
 	if collectedData.empty:
-		print('No network for:',topic)
+		print('No network for:',title)
 		continue
 	elif newData and collectedData.empty == False:
 		collectedData.to_csv('data ' + title + '.csv',index=False)
 
 	mySociogram = Sociogram(collectedData,title,topN,centralityType)
-	mySociogram.saveSummary('summary ' + title + ' .csv')
-	plt.savefig('sociogram ' + title + 'sociogram.jpg')
-	plt.show(block=False)
+	mySociogram.saveSummary('summary ' + title + '.csv')
+	plt.savefig('sociogram ' + title + '.jpg')
+	# plt.show(block=False)
 
-input("Press Enter to close all plots...")
-
-# Added functionality to visualise networks that have nodes and no edges. Dealt with cases of data files not existing.
+# input("Press Enter to close all plots...")
