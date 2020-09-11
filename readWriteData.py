@@ -1,7 +1,6 @@
 
 import pandas as pd
 import ast
-from twitterScraping import *
 
 def readDataCSV(nameFile):	# Dicts by default in string format. Rewrite the column with real dicts.
 	collectedData = pd.read_csv(nameFile)
@@ -11,9 +10,7 @@ def readDataCSV(nameFile):	# Dicts by default in string format. Rewrite the colu
 		collectedData.iloc[i,columnIndex] = [ast.literal_eval(weightedLinks[i])]
 	return collectedData
 
-def getNewData(topic,tweetLim,dates,filename):
-	collectedData = scrapeTopic(topic,tweetLim,dates)
-	if collectedData.empty:
-		print('No network for:',topic)
-	collectedData.to_csv(filename,index=False)
-	return collectedData
+# def getNewData(topic,tweetLim,dates,filename):
+# 	collectedData = scrapeTopic(topic,tweetLim,dates)
+# 	collectedData.to_csv(filename,index=False)
+# 	return collectedData
