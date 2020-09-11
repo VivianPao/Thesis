@@ -5,9 +5,12 @@ import pandas as pd
 import numpy as np
 from collections import ChainMap
 
+[IN_DEG_CEN,OUT_DEG_CEN,DEG_CEN,EIG_CEN,CLOSE_CEN,BTWN_CEN] = range(0,6)
+CENTRALITY = {'in degree':IN_DEG_CEN,'out degree':OUT_DEG_CEN,'degree':DEG_CEN,'eigenvector':EIG_CEN,'closeness':CLOSE_CEN,'betweenness':BTWN_CEN}
+
 # Sentiment constants
-H_CUTOFF = 0.05
-L_CUTOFF = -0.05
+H_CUTOFF = 0#0.05
+L_CUTOFF = 0#-0.05
 POS = 2
 NEU = 1
 NEG = 0
@@ -31,7 +34,7 @@ OUT_MAX = 600
 
 class Sociogram:
 
-	def __init__(self,twintDf):
+	def __init__(self,twintDf,title,topN,centralityType):
 		# Get only the required data from the dataframe
 		self.nodes = self.calcNodes(twintDf)
 		[self.edges,self.edgeWeights] = self.calcEdges(twintDf)
@@ -41,6 +44,10 @@ class Sociogram:
 		self.G = nx.DiGraph()
 		self.G.add_nodes_from(self.nodes)	# By adding nodes first, we fix the order for usernames we know of already.
 		self.G.add_edges_from(self.edges)	# Determines the order of edges. Will add new nodes in order.
+
+		# Compute features and visualise the network
+		self.calcFeatures(topN,CENTRALITY[centralityType])
+		self.drawNetwork(title)
 
 	def calcFeatures(self,topN,centralityType):
 		nodes = list(self.G.nodes())	# Save updated node list. Includes other mentioned users from edges
@@ -62,14 +69,22 @@ class Sociogram:
 		topNUsers = list(self.centralityDf.iloc[0:topN]['username'])
 		self.labels = self.calcLabels(topNUsers)
 
-	def drawNetwork(self):	# Add parameter as option to show minor labels
+	def drawNetwork(self,title):	# Add parameter as option to show minor labels
+		plt.figure(figsize=[10, 8])
+
 		pos = nx.spring_layout(self.G)
 		# pos = nx.kamada_kawai_layout(self.G)
 		# pos = nx.fruchterman_reingold_layout(self.G)
 		nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='k')
 		nx.draw_networkx_labels(self.G,pos,self.labels)	# Implement separated label commands for different centrality
 		nx.draw_networkx_edges(self.G,pos,self.G.edges(),width=self.edgeWidths)
-		plt.show(block=False)
+
+		# Create figure and save as image
+		plt.axis('off')
+		plt.title(title,fontweight='bold')
+		plt.tight_layout()
+		# plt.savefig(title + ' sociogram.jpg')
+		# plt.show(block=False)
 
 	def calcColors(self,sentiment):	# Given list of sentiment floats, generate list of colors for nodes
 		colorList = ['r','y','g','w']
@@ -129,4 +144,10 @@ class Sociogram:
 
 	def saveSummary(self,nameCSV):	# Create rank column, put it as first column, then save
 		self.centralityDf['rank'] = [rank+1 for rank in range(len(self.centralityDf))]
-		self.centralityDf[['rank','username','centrality']].to_csv(nameCSV,index=False)
+		# self.centralityDf['in degree'] = [rank+1 for rank in range(len(self.centralityDf))]
+		# self.centralityDf['out degree'] = [rank+1 for rank in range(len(self.centralityDf))]
+		self.centralityDf[['rank','username']].to_csv(nameCSV,index=False)
+		# 'rank','username','in degree','out degree'
+		
+		# self.sentiment
+		# 	Count how many terms +ve, -ve, 0
