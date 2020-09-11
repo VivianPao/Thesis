@@ -51,17 +51,20 @@ class Sociogram:
 
 	def calcFeatures(self,topN,centralityType):
 		nodes = list(self.G.nodes())	# Save updated node list. Includes other mentioned users from edges
-		self.edgeWidths = [weight*0.5 for weight in self.edgeWeights]
-		self.edgeWidths = (self.edgeWidths-np.min(self.edgeWidths))/(np.max(self.edgeWidths)--np.min(self.edgeWidths)+0.001)*3 + 1
-		self.edgeWidths = self.edgeWidths/self.edgeWidths
+
+		self.edgeWidths = None
+		if len(self.edges) != 0:
+			self.edgeWidths = [weight*0.5 for weight in self.edgeWeights]
+			self.edgeWidths = (self.edgeWidths-np.min(self.edgeWidths))/(np.max(self.edgeWidths)--np.min(self.edgeWidths)+0.001)*3 + 1
+			self.edgeWidths = self.edgeWidths/self.edgeWidths
+
+		self.nodeColors = self.calcColors(self.sentiment)
 
 		# Calculate node size using centrality
 		centrality = self.calcCentrality(centralityType)
 		inMin = min(centrality)	# Map min, max centrality values for desired node size
 		inMax = max(centrality)
 		self.nodeSizes = [(nodeCen-inMin)/(inMax-inMin+0.001)*(OUT_MAX-OUT_MIN)+OUT_MIN for nodeCen in centrality] # +0.001 in case inMax-inMin == 0. Avoid dividing by 0.
-
-		self.nodeColors = self.calcColors(self.sentiment)
 
 		# Labels, which change depending on input
 		self.centralityDf = pd.DataFrame({'username': nodes,'centrality': centrality})
