@@ -5,15 +5,16 @@ from twitterScraping import *
 
 # ************ USER INPUTS *************************************
 
-newData = False
 topN = 10
-dates = ['2006-08-01','2020-09-12']	# YYYY-MM-DD
+dates = ['2020-01-01','2020-09-12']	# YYYY-MM-DD
 topic = 'badgerys creek airport'
 centralityType = 'degree'	# Choose from 'in degree','out degree','degree','eigenvector','closeness','betweenness'
+
 tweetLim = None
-divideType = 'yearly'		# Choose from None, 'monthly' or 'yearly'
-showFigures = False
-saveFigures = False
+divideType = 'monthly' #'yearly'		# Choose from None, 'monthly' or 'yearly'
+newData = False
+showFigures = True
+saveFigures = True
 
 # ************ MAIN ******************************************** 
 
