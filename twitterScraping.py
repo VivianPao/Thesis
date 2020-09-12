@@ -16,7 +16,7 @@ def organiseData(df):
 	if df.empty:
 		return df
 
-	df = df[['username','tweet','reply_to']]	# concat string tweets and list of dicts
+	df = df[['date','username','tweet','reply_to']]	# concat string tweets and list of dicts
 	df = df.groupby('username',as_index=False).aggregate(sum)	# Group by username (merge duplicates)
 
 	# For each user/ row, rewrite the dictionary. key: mentioned users, val: weight
@@ -35,7 +35,12 @@ def organiseData(df):
 	# Remove users that have no outgoing connection, i.e. empty dictionary in 'reply_to' column
 	# df = df.drop(df[df.reply_to == {}].index)
 	df['sentiment'] = df['tweet'].apply(calcTextSentiment)	# Add sentiment column
-
+	# df['date'] =pd.to_datetime(df.date)
+	# df = df.sort_values(by='date')
+	# print(df['date']['2020-08-01 15:36:25':'2020-08-15 18:28:58'])
+	# df = df[(df['date'] > '2020-08-01 15:36:25') & (df['date'] <= '2020-08-15 18:28:58')]
+	# print('CP')
+	# print(df[(df['date'] >= '2020-08-01 15:36:25') & (df['date'] <= '2020-08-15 18:28:58')])
 	return df
 
 # Based on the posts of a topic, find all the users that have mentioned a particular person on a topic (or no topic)
