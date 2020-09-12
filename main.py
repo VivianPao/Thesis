@@ -11,8 +11,8 @@ topic = 'badgerys creek airport'
 centralityType = 'degree'	# Choose from 'in degree','out degree','degree','eigenvector','closeness','betweenness'
 
 tweetLim = None
-divideType = 'monthly' #'yearly'		# Choose from None, 'monthly' or 'yearly'
-newData = False
+divideType = None#'monthly' #'yearly'		# Choose from None, 'monthly' or 'yearly'
+newData = True
 showFigures = True
 saveFigures = True
 
