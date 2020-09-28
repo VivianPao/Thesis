@@ -3,16 +3,31 @@ from getDates import getMonthlyDates, getYearlyDates
 from readWriteData import *
 from twitterScraping import *
 
+def filterMentions(currLinkDict,checkDict):
+	newLinkDict = dict()
+	for key,val in currLinkDict.items():
+		if key[1] in checkDict:	# Key is a tuple to show edge. We only want the 'TO' field.
+			newLinkDict[key] = val
+
+	return newLinkDict
+
+# Remove mentions of users who are outside of the top 100
+def filterClosedNetwork(df,userList):
+	userDict = dict(zip(userList,[0]*len(userList)))
+	df['reply_to'] = df['reply_to'].apply(filterMentions,checkDict=userDict)
+
+	return df
+
 # ************ USER INPUTS *************************************
 
-topN = 10
-dates = ['2020-01-01','2020-09-12']	# YYYY-MM-DD
+topN = 100
+dates = ['2006-01-01','2020-09-12']	# YYYY-MM-DD
 topic = 'badgerys creek airport'
 centralityType = 'degree'	# Choose from 'in degree','out degree','degree','eigenvector','closeness','betweenness'
 
 tweetLim = None
 divideType = None#'monthly' #'yearly'		# Choose from None, 'monthly' or 'yearly'
-newData = True
+newData = False
 showFigures = True
 saveFigures = True
 
@@ -35,6 +50,8 @@ if divideType == None: dateWindowList = [dates]
 if divideType == 'monthly': dateWindowList = getMonthlyDates(dates[0],dates[1]) # Use monthly date pairs
 if divideType == 'yearly': dateWindowList = getYearlyDates(dates[0],dates[1]) # Use yearly date pairs
 
+# ************ ALTER HERE ******************************************** 
+
 # For each window, visualise the sociogram
 for dateWindow in dateWindowList:
 	windowData = collectedData[(collectedData['date'] >= dateWindow[0]) & (collectedData['date'] <= dateWindow[1])]
@@ -44,11 +61,30 @@ for dateWindow in dateWindowList:
 
 	title = topic.title() + ' ' + dateWindow[0] + ' to ' + dateWindow[1]
 	mySociogram = Sociogram(windowData,title,topN,centralityType)
+	mySociogram.saveSummary(title + ' summary.csv')
+	mySociogram.drawCommunitiesTogether(reciprocal=True)
+	mySociogram.drawCommunitiesTogether(reciprocal=False)
 
-	if saveFigures:
-		mySociogram.saveSummary(title + ' summary.csv')
-		plt.savefig(title + ' sociogram.jpg')
-	if showFigures:
-		plt.show(block=False)
-if showFigures:
+	topNsubset = mySociogram.getTopNDf(topN)
+	userList = topNsubset['username'].to_list()
+	topNsubset = filterClosedNetwork(topNsubset,userList)
+	subsetTitle = title+' top '+str(topN)
+	subsetSociogram = Sociogram(topNsubset,subsetTitle,topN//2,centralityType)	# //2 shows 
+	subsetSociogram.drawNetwork(subsetTitle,showSentiment=True)
+	subsetSociogram.drawCommunities(reciprocal=False)
+	subsetSociogram.drawCommunities(reciprocal=True)
+	subsetSociogram.drawCommunitiesTogether(reciprocal=True)
+	subsetSociogram.drawCommunitiesTogether(reciprocal=False)
+
+	# plt.savefig(title + ' sociogram.jpg')
+	plt.show(block=False)
 	input("Press Enter to close all plots...")
+
+
+
+# Create functions to show group networks.
+# --> Show GROUPS. Want to see clear distinction between people in discussions
+
+
+
+
