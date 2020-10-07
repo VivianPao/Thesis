@@ -54,7 +54,7 @@ class Sociogram:
 
 	def calcFeatures(self,topN,centralityType):
 		nodes = list(self.G.nodes())	# Save updated node list. Includes other mentioned users from edges
-
+		print(len(nodes))
 		self.edgeWidths = None
 		if len(self.edges) != 0:
 			self.edgeWidths = [weight*0.5 for weight in self.edgeWeights]
@@ -72,8 +72,10 @@ class Sociogram:
 		# Labels, which change depending on input
 		# Add centrality column to the df
 		centralityDf = pd.DataFrame({'username': nodes,'centrality': centrality})
-		self.df = pd.merge(self.df,centralityDf,on='username')
+		self.df = pd.merge(centralityDf,self.df,on='username',how='outer')
 		self.df = self.df.sort_values(by=['centrality'],ascending=False)
+
+		# print(len(self.df['username']))
 		# print(self.df['centrality'])
 		topNUsers = list(self.df.iloc[0:topN]['username'])
 		self.labels = self.calcLabels(topNUsers)
@@ -88,7 +90,7 @@ class Sociogram:
 			nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='gray')
 		else:
 			nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,edgecolors='gray')
-			
+
 		nx.draw_networkx_labels(self.G,pos,self.labels)	# Implement separated label commands for different centrality
 		nx.draw_networkx_edges(self.G,pos,self.G.edges(),width=self.edgeWidths)
 
@@ -146,7 +148,7 @@ class Sociogram:
 		elif centralityType == BTWN_CEN:
 			return list(nx.betweenness_centrality(G).values())
 		else:	# Set default to in degree centrality
-			return list(nx.out_degree_centrality(G).values())
+			return list(nx.degree_centrality(G).values())
 
 	def calcLabels(self,topUsers):
 		labels = {} 
@@ -163,7 +165,6 @@ class Sociogram:
 		savedDf = self.df.copy()
 		savedDf['rank'] = [rank+1 for rank in range(len(self.df))]
 		savedDf[['rank','username']].to_csv(nameCSV,index=False)
-		# 'rank','username','in degree','out degree'
 		
 		# self.sentiment
 		# 	Count how many terms +ve, -ve, 0
