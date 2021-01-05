@@ -4,4 +4,4 @@ Tweets are collected and the users are depicted in a network visualisation to in
 
 The provided code uses Twint for Twitter scraping and NetworkX for sociogram/ social network visualisation.
 
-To run the code, open up 'main.py' and alter parameters at the top of the file as you see fit. To run, type 'python main.py' into the command line. The code will take some time to run (a few minutes to several hours depending on your parameters).
+To run the code,type 'python main.py' into the command line. Respond to the questions asked in the command prompt. The code will take some time to run (a few minutes to several hours depending on your parameters).
