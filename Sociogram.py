@@ -74,20 +74,26 @@ class Sociogram:
 		centralityDf = pd.DataFrame({'username': nodes,'centrality': centrality})
 		self.df = pd.merge(centralityDf,self.df,on='username',how='outer')
 		self.df = self.df.sort_values(by=['centrality'],ascending=False)
-<<<<<<< Updated upstream
-
-		# print(len(self.df['username']))
-		# print(self.df['centrality'])
-=======
-<<<<<<< HEAD
-=======
-
-		# print(len(self.df['username']))
-		# print(self.df['centrality'])
->>>>>>> 3b0814178a3d012171d8d60b9f6cbd338800db9f
->>>>>>> Stashed changes
 		topNUsers = list(self.df.iloc[0:topN]['username'])
 		self.labels = self.calcLabels(topNUsers)
+
+	def customColorHighlight(self,highlightList,color):
+		colorList = []
+		for node in list(self.G.nodes()):
+			if node in highlightList:
+				colorList.append(color)
+			else:
+				colorList.append('w')
+
+		self.nodeColors = colorList
+
+
+	def customLabelHighlight(self,LabelList):
+		labels = dict()
+		for user in LabelList:
+			if user in list(self.G.nodes()):
+				labels[user] = user
+		self.labels = labels
 
 	def drawNetwork(self,title,showSentiment=False):	# Add parameter as option to show minor labels
 		plt.figure(figsize=[10, 8])
@@ -95,25 +101,12 @@ class Sociogram:
 		pos = nx.spring_layout(self.G)
 		# pos = nx.kamada_kawai_layout(self.G)
 		# pos = nx.fruchterman_reingold_layout(self.G)
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 		# if showSentiment:
 		# 	nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='gray')
 		# else:
 		# 	nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,edgecolors='gray')
 
 		nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='gray')
-=======
->>>>>>> Stashed changes
-		if showSentiment:
-			nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,node_color=self.nodeColors,edgecolors='gray')
-		else:
-			nx.draw_networkx_nodes(self.G,pos,self.G.nodes(),node_size=self.nodeSizes,edgecolors='gray')
-<<<<<<< Updated upstream
-=======
->>>>>>> 3b0814178a3d012171d8d60b9f6cbd338800db9f
->>>>>>> Stashed changes
 
 		nx.draw_networkx_labels(self.G,pos,self.labels)	# Implement separated label commands for different centrality
 		nx.draw_networkx_edges(self.G,pos,self.G.edges(),width=self.edgeWidths)
@@ -182,17 +175,11 @@ class Sociogram:
 		return labels
 
 	def saveSummary(self,nameCSV):	# Create rank column, put it as first column, then save
-		# self.savedDf['in degree'] = 
-		# self.savedDf['out degree'] = 
-
 		# Add centrality ranking to the dataframe
 		savedDf = self.df.copy()
 		savedDf['rank'] = [rank+1 for rank in range(len(self.df))]
 		savedDf[['rank','username']].to_csv(nameCSV,index=False)
 		
-		# self.sentiment
-		# 	Count how many terms +ve, -ve, 0
-
 	def getTopNDf(self,topN):
 		# Don't share the centrality values
 		if topN < len(self.df.index):
@@ -242,18 +229,3 @@ class Sociogram:
 
 		nx.draw_networkx_labels(G,pos,labels)
 		# plt.show()
-
-	# def drawReciprocalsOnly(self,removeIsolated=True):
-	# 	undirG = self.G.to_undirected(reciprocal=True)
-
-	# 	if removeIsolated:
-	# 		undirG.remove_nodes_from(list(nx.isolates(undirG)))
-
-	# 	plt.figure(figsize=[10, 8])
-	# 	pos = nx.spring_layout(undirG)
-
-	# 	nx.draw_networkx_nodes(undirG,pos,undirG.nodes(),edgecolors='gray',node_color='orange')
-	# 	nx.draw_networkx_labels(undirG,pos)	# Implement separated label commands for different centrality
-	# 	nx.draw_networkx_edges(undirG,pos,undirG.edges(),edge_color='gray')
-
-	# 	plt.axis('off')
