@@ -1,22 +1,40 @@
 
 import sys
-from stakeholderSNA_fns import drawEgoFromFile,drawCommFromFile,drawWholeNetworkFromFile,saveSummary,drawActivityOverTime
-import matplotlib.pyplot as plt
+from visualisation import drawEgoFromFile,drawCommFromFile,drawWholeNetworkFromFile,saveSummary,drawActivityOverTime
 
 # CONSTANTS
+# Fields
 ARG_R_FILE = "-replyfile:"
 ARG_EGO_USER = "-egouser:"
 ARG_COLOR = "-color:"
+ARG_MODE = "-mode:"
+
+# Optional fields
 ARG_TOPN = "-top:"
 ARG_RECIP = "-reciprocal"
-ARG_MODE = "-mode:"
-RECIPROCAL_ON = 1
+
+# Mode options, i.e. visualisation types
+ARG_MODE_EGO = "egocentric"
+ARG_MODE_INDIV = "individual"
+ARG_MODE_WHOLE = "whole"
+ARG_MODE_SUMM = "summary"
+ARG_MODE_OVER_T = "overtime"
+
+# Color options
+ARG_COLOR_COMM = "community"
+ARG_COLOR_SENTI = "sentiment"
+ARG_COLOR_ACT = "action"
+
+# Mode options, numerical
 EGO = 1
 INDIV_COMM = 2
 WHOLE_NET = 3
 CSV_SUMM = 4
 OVER_TIME = 5
 END = 6
+RECIPROCAL_ON = 1
+
+# Color options, numerical
 COMMUNITY = 1
 SENTIMENT = 2
 ACTION_CALL = 3
@@ -31,6 +49,7 @@ topN = 100
 block = False
 colorOption = None
 
+# Guided user question functions
 def askVisType():
 	visType = input("\nWhat visualisation would you like to make?\n1) Egocentric (i.e. one user in the center)\n2) Individual communities (find all the clusters and draw each on a separate image)\n3) Whole network\n4) Create CSV summary of user centrality and communities\n5) Create line graph of network activity over time\n6) End the program\n")
 	return int(visType)
@@ -61,7 +80,7 @@ if __name__ == "__main__":
 
 	for i in range(20):
 
-		# RETRIEVE user parameters
+		############################## RETRIEVE user parameters ##############################
 		if len(sys.argv) == 1:
 			visType = askVisType()
 			if visType == EGO: egoUser = askEgoUser()
@@ -84,21 +103,21 @@ if __name__ == "__main__":
 				elif ARG_RECIP in param: reciprocal = True
 
 			# Mode options
-			if mode == "egocentric": visType = EGO
-			elif mode == "individual": visType = INDIV_COMM
-			elif mode == "whole": visType = WHOLE_NET
-			elif mode == "summary": visType = CSV_SUMM
-			elif mode == "overtime": visType = OVER_TIME
+			if mode == ARG_MODE_EGO: visType = EGO
+			elif mode == ARG_MODE_INDIV: visType = INDIV_COMM
+			elif mode == ARG_MODE_WHOLE: visType = WHOLE_NET
+			elif mode == ARG_MODE_SUMM: visType = CSV_SUMM
+			elif mode == ARG_MODE_OVER_T: visType = OVER_TIME
 
 			# If drawing sociograms, color represents:
-			if color == "community": colorOption = COMMUNITY
-			elif color == "sentiment": colorOption = SENTIMENT
-			elif color == "action":	colorOption = ACTION_CALL
+			if color == ARG_COLOR_COMM: colorOption = COMMUNITY
+			elif color == ARG_COLOR_SENTI: colorOption = SENTIMENT
+			elif color == ARG_COLOR_ACT:	colorOption = ACTION_CALL
 			else: colorOption = NO_COLOR
 			
-			block = True	# Wait until user closes the visualisation window until advancing in code.
+			block = True	# Lets us wait until user closes the visualisation window until advancing in code.
 
-		# PROCESS parameters and EXECUTE request
+		############################## PROCESS parameters and EXECUTE request ##############################
 		if visType == EGO:
 			drawEgoFromFile(repliesFile,egoUser,colorRepresents=colorOption,reciprocal=reciprocal,saveAndClose=False,block=block)
 		elif visType == INDIV_COMM:
