@@ -1,7 +1,6 @@
 
 # FINAL_fns
-
-import twint
+import pickle
 from ast import literal_eval
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -10,232 +9,123 @@ import numpy as np
 from collections import ChainMap 
 import matplotlib.cm as cm
 import community as community_louvain
+from scraping import *
 
 REPLIES = 0
 FOLLOWS = 1
 INVALID = -1
 
-# TWITTER SCRAPING FUNCTIONS
-
-# If the user has been seen before, increment their count. If not, add them into the dictionary and set count to 1.
-def addToDict(dictName,keyValue):
-	if keyValue not in dictName:
-		dictName[keyValue] = 1
-	else:
-		dictName[keyValue] += 1
-
-# Return dataframe with sentiment analysis and edge + weight dictionary
-def organiseData(df):
-
-	if df.empty:
-		return df
-
-	df = df[['date','username','tweet','reply_to']]	# concat string tweets and list of dicts
-	df = df.groupby('username',as_index=False).aggregate(sum)	# Group by username (merge duplicates)
-
-	# print(df)
-
-	# For each user/ row, rewrite the dictionary. key: mentioned users, val: weight
-	# Use the apply() pandas function to create a new entry for the dictionary!
-	for row in range(len(df)):
-		username = df.iloc[row][0]
-		listOfDicts = df.iloc[row]['reply_to']
-
-		linkTo = {}	# Create dict, keys as tuples of user -> mentioned user: weight
-		for aDict in listOfDicts:
-			mentionedUser = aDict['screen_name']
-			if mentionedUser != username: # As long as the user isn't replying to themselves, add them to the dictionary
-				addToDict(linkTo,(username,mentionedUser))
-		df.loc[df.username == username,'reply_to'] = [linkTo]
-
-	# df['sentiment'] = df['tweet'].apply(calcTextSentiment)	# Add sentiment column
-
-	return df
-
-# Need to process/ reoganise the followings
-def organiseFollows(df):
-	return 0
-
-# Based on the posts of a topic, find all the users that have mentioned a particular person on a topic (or no topic)
-def scrapeTopic(topic,tweetLimit=None,dates=None):
-# Dates in form ['YYYY-MM-DD','YYYY-MM-DD']
-	c = twint.Config()
-
-	if tweetLimit != None:
-		c.Limit = tweetLimit
-	
-	c.Search = topic
-	# c.Store_csv = True
-	# The following features/ customisations do not work with the latest Twint version
-	c.Pandas = True
-	# c.Format = "{date}: {username} -> {mentions}" 
-	if dates != None:
-		[sinceDate,untilDate] = dates
-		c.Since = sinceDate
-		c.Until = untilDate
-
-	twint.run.Search(c)
-
-	df = organiseData(twint.storage.panda.Tweets_df)
-
-	return df	# Dataframe of series!
-
-
-def findFollowing(username,limitNum=10000):
-	c = twint.Config()
-	# c.Limit = limitNum
-	c.Pandas = True
-	c.Username = username
-	twint.run.Following(c)
-
-	collectedData = twint.storage.panda.Follow_df	# Dataframe of dataframes!
-	targetData = collectedData.loc[:,('following')][username]	# Gives an array
-	sourceData = [username] * len(targetData)
-	finalData = pd.DataFrame({'A': sourceData,'B': targetData})
-	# print(finalData)
-	return finalData
-
-def scrapeFollowings(userList):
-	followerDf = pd.DataFrame()
-	for user in userList:
-		print('Searching: ',user)
-		for attempt in range(10):
-			try:
-				data = findFollowing(user,None)
-			except:
-				print('Error for',user)
-				continue
-			followerDf = pd.concat([followerDf,data])
-			followerDf.to_csv('followerData'+userList[len(userList)-1]+'.csv')
-			break
-
-	return followerDf
-
-# DRAWING FILE
-
-def drawCommFromFile(filename,topN):
-	
-	######################## LOAD THE DATA #######################
+# Whole network over time
+MONTHLY_CHAR = 7
+FULL_DATE_CHAR = 19
+def drawActivityOverTime(filename,saveAndClose=False):
 	if ".csv" in filename:
 		df = pd.read_csv(filename)
 	else:
 		df = pd.read_json(filename)
+	if checkRepliesOrFollows(df) != 'reply_to':
+		print("Invalid")
+		return
 
-	dataType = checkRepliesOrFollows(df)
-	if dataType == REPLIES:
-		typeString = 'reply_to'
-		subtitle = 'Communities Based On Replies: '
-		df['reply_to'] = df['reply_to'].apply(turn2LiteralKeysReply)
+	dateList = list(df['date'])
 
-	elif dataType == FOLLOWS:
-		typeString = 'followings'
-		subtitle = 'Communities Based On Follows: '
-		df['followings'] = df['followings'].apply(turn2LiteralKeys)
+	monthDict = {}
+	for item in dateList:
+		for i in range(len(item)//FULL_DATE_CHAR):
+			dateStamp =item[i*FULL_DATE_CHAR:(i+1)*FULL_DATE_CHAR]
+			month = dateStamp[:MONTHLY_CHAR]
+			if month in monthDict: monthDict[month] += 1
+			else: monthDict[month] = 1
 
-	######################## PROCESS AND VISUALISE #######################
-	commDict = extractCommunities(df,typeString,reciprocal=True,individualsAsCommunities=False)
+	xTicks = list(monthDict.keys())
+	xTicks.sort()	# Order the date strings
+	x = range(len(xTicks))
+	y = [monthDict[x] for x in xTicks]	# Get corresponding values in sorted order
 
-	for i in range(len(commDict)):
-		commList = commDict[i]
-		commDf = keepOnlyUsers(df,commList,strictFilterCol=typeString)
-		cDf = calcOverallCentrality(commDf,typeString)
-		overallCenDict = dict(zip(list(cDf['username']),list(cDf['overall'])))
-		overallSorted = cDf.sort_values(by='overall',ascending=False)
-		labelList = list(overallSorted['username'])
-		labelList = labelList[:topN]
+	plt.xticks(x,xTicks)
+	plt.plot(x,y)
+	plt.xlabel("Year/Month")
+	plt.ylabel("Number of Posts")
+	plt.title("Network Activity Over Time ("+xTicks[0]+" to "+xTicks[-1]+")")
 
-		drawGraph(commDf,typeString,title=filename+'- '+subtitle+'('+str(i)+') ',sizesDict=overallCenDict,labelList=labelList,sizeScale=100,minSize=5,removeIsolates=False,edgeAlpha=0.05,block=False,saveAndClose=True)
+	plt.show(block=False)
+	if saveAndClose == True:
+		plt.savefig(title+'.jpg')
+		plt.close()
 
+def saveSummary(filename,reciprocal=False):
+	# print("Producing CSV Summary")
+	df = pd.read_csv(filename)
+	df = df.drop(df.columns[0], axis=1) # Drop the index column
 
-def drawWholeNetworkFromFile(filename,topN):
-	######################## LOAD THE DATA #######################
-	if ".csv" in filename:
-		df = pd.read_csv(filename)
+	columnName = checkRepliesOrFollows(df)
+	df[columnName] = df[columnName].apply(turn2LiteralKeysReply)
+
+	# Whole network
+	cDf = calcOverallCentrality(df,columnName)
+	cDf = cDf.rename(columns={"degree": "degree centrality (within whole network)", "closeness": "closeness centrality (within whole network)","betweenness": "betweenness centrality (within whole network)","overall": "overall centrality (within whole network)"})
+
+	# For communities
+	if reciprocal == True:
+		commFilename = filename[:-4]+'_communities_reciprocal'+'.pkl'
+		subsubtitle = "_reciprocal_for_comm"
 	else:
-		df = pd.read_json(filename)
+		commFilename = filename[:-4]+'_communities_NOT_reciprocal'+'.pkl'
+		subsubtitle = " NOT_reciprocal_for_comm"
+	commDict,colorDict = loadOrSaveColorDict(commFilename,df,columnName,reciprocal)
 
-	dataType = checkRepliesOrFollows(df)
-	if dataType == REPLIES:
-		typeString = 'reply_to'
-		subtitle = 'Replies: '
-		df['reply_to'] = df['reply_to'].apply(turn2LiteralKeysReply)
+	summaryDf = pd.DataFrame({})
+	commNumList = []
+	commUserList = []
+	for commNum in list(commDict.keys()):
+		commUserList = commDict[commNum]
+		commNumList = [commNum]*len(commDict[commNum])
 
-	elif dataType == FOLLOWS:
-		typeString = 'followings'
-		subtitle = 'Follows: '
-		df['followings'] = df['followings'].apply(turn2LiteralKeys)
+		commDf = keepOnlyUsers(df,commUserList,strictFilterCol=columnName)
+		commSummaryDf = calcOverallCentrality(commDf,columnName)
+		commSummaryDf.insert(1,"community number",commNumList)
+		
+		summaryDf = summaryDf.append(commSummaryDf,ignore_index=True)
 
+	summaryDf = summaryDf.rename(columns={"degree": "degree centrality (within own community)", "closeness": "closeness centrality (within own community)","betweenness": "betweenness centrality (within own community)","overall": "overall centrality (within own community)"})
 
-	######################## PROCESS AND VISUALISE #######################
-	cDf = calcOverallCentrality(df,typeString)
-	overallCenDict = dict(zip(list(cDf['username']),list(cDf['overall'])))
-	overallSorted = cDf.sort_values(by='overall',ascending=False)
-	labelList = list(overallSorted['username'])
-	labelList = labelList[:topN]
+	# DO NOT DELETE THE ONES THAT ARE NOT IN COMMON
+	summaryDf = pd.merge(summaryDf, cDf, on='username', how='outer')
+	sentimentDf = getSentimentDf(df)
+	summaryDf = pd.merge(summaryDf, sentimentDf, on='username', how='outer')
+	summaryDf.to_csv('Summary_'+subsubtitle+'.csv')
 
-	drawGraph(df,typeString,title=filename+'- '+subtitle,sizesDict=overallCenDict,labelList=labelList,sizeScale=100,minSize=5,removeIsolates=False,edgeAlpha=0.05,block=False,saveAndClose=True)
+# Calls for action!
+def calcActionCalling(text,actionBank):
+	text = text.lower()
+	score = 0	# Initial action calling score is 0
+	if len(text) != 0:
+		# Calculate individual string sentiment and then get the average
+		for word in actionBank:
+			score += text.count(word)
+	return score
 
-
-def drawEgoFromFile(filename,user):
-
-	######################## LOAD THE DATA #######################
-	if ".csv" in filename:
-		df = pd.read_csv(filename)
+def actionCallColor(text,actionBank):
+	score = calcActionCalling(text,actionBank)
+	if score > 0:
+		return 'r'
 	else:
-		df = pd.read_json(filename)
+		return 'gray'
 
+def calcTextSentiment(text,posBank,negBank):
+	# Made lowercase for case insensitive search
+	text = text.lower()
+	sentiment = 0	# Initial sentiment of 0 (neutral)
+	if len(text) != 0:
+		# Calculate individual string sentiment and then get the average
+		for word in posBank:
+			sentiment += text.count(word)
+		for word in negBank:
+			sentiment -= text.count(word)
+	return sentiment
 
-	######################## PROCESS DATA AND VISUALISE #######################
-	dataType = checkRepliesOrFollows(df)
-	if dataType == REPLIES:
-		df['reply_to'] = df['reply_to'].apply(turn2LiteralKeysReply)
-		egoPost = getEgocentricDf(df,'reply_to',user)
-
-		egoPost_to = egoPost.loc[egoPost['username'] != user]
-		egoPost_from = egoPost.loc[egoPost['username'] == user]
-
-		# INCOMING CONNECTIONS
-		drawGraph(egoPost_to,'reply_to',title='Egocentric: Who replies to '+user,block=False,sizesDict={user:3},labelList=list(egoPost_to['username'])+[user],edgeAlpha=0.1,saveAndClose=True)
-
-		# OUTGOING CONNECTIONS
-		edgeDict = mergeDictCol(egoPost_from['reply_to'])
-		edgeList = list(edgeDict.keys())
-		labelList = [edge[1] for edge in edgeList]	# Retrieve the 'to'
-		drawGraph(egoPost_from,'reply_to',title='Egocentric: Who '+user+' replies to',block=False,sizesDict={user:3},labelList=labelList+[user],edgeAlpha=0.1,saveAndClose=True)
-
-	elif dataType == FOLLOWS:
-		df['followings'] = df['followings'].apply(turn2LiteralKeys)
-		egoFollows = getEgocentricDf(df,'followings',user)
-
-		egoFollows_to = egoFollows.loc[egoFollows['username'] != user]
-		egoFollows_from = egoFollows.loc[egoFollows['username'] == user]
-
-		# INCOMING CONNECTIONS
-		drawGraph(egoFollows_to,'followings',title='Egocentric: Who follows '+user,block=False,sizesDict={user:3},labelList=list(egoFollows_to['username'])+[user],edgeAlpha=0.1,saveAndClose=True)
-
-		# OUTGOING CONNECTIONS
-		edgeDict = mergeDictCol(egoFollows_from['followings'])
-		edgeList = list(edgeDict.keys())
-		labelList = [edge[1] for edge in edgeList]	# Retrieve the 'to'
-		drawGraph(egoFollows_from,'followings',title='Egocentric: Who '+user+' follows',block=False,sizesDict={user:3},labelList=labelList+[user],edgeAlpha=0.1,saveAndClose=True)
-
-
-
-
-######################## FUNCTIONS #######################
-def checkRepliesOrFollows(fileDf):
-	headingsList = list(fileDf.columns)
-	if 'reply_to' in headingsList:
-		# print('Replies')
-		return REPLIES
-	elif 'followings' in headingsList:
-		# print('Followings')
-		return FOLLOWS
-	else:
-		# print('Not a valid csv')
-		return INVALID
-
-def sentiment2Color(score):
+def sentimentColor(text,posBank,negBank):
+	score = calcTextSentiment(text,posBank,negBank)
 	if score < 0:
 		return 'r'
 	elif score > 0:
@@ -243,19 +133,207 @@ def sentiment2Color(score):
 	else:
 		return 'y'
 
-def analyseCalls2Action(text):
-	wordBank = ["petition","protest","letter","strike"]
-	score = 0
-	for word in wordBank:
-		score += text.count(word)
-	return score
+def loadWordBank(filename):
+	# Load all the negative words
+	f = open(filename, "r")
+	lines = f.read().split('\n')	# Retrieve every line
+	wordBank = [text.lower() for text in lines if ";" not in text and text != ""]	# If the line has a semicolon or has no text, disregard the line
+	# Made lowercase for case insensitive search
+	f.close()
+	return wordBank
 
-def calls2Action2Color(text):
-	score = analyseCalls2Action(text)
-	if score > 0:
-		return 'r'
+# DRAWING FILE
+COMMUNITY = 1
+SENTIMENT = 2
+ACTION_CALL = 3
+NO_COLOR = 4
+def drawCommFromFile(filename,topN,colorRepresents=None,reciprocal=False,saveAndClose=False):
+	
+	######################## LOAD THE DATA #######################
+	if ".csv" in filename:
+		df = pd.read_csv(filename)
 	else:
-		return 'gray'
+		df = pd.read_json(filename)
+
+	columnName = checkRepliesOrFollows(df)
+	if columnName == 'reply_to':
+		subtitle = 'Communities Based On Replies, '
+		df['reply_to'] = df['reply_to'].apply(turn2LiteralKeysReply)
+	elif columnName == 'followings':
+		subtitle = 'Communities Based On Follows, '
+		df['followings'] = df['followings'].apply(turn2LiteralKeys)
+
+	######################## LOAD COMMUNITY FILE OR MAKE ONE #######################
+	if reciprocal == True:
+		commFilename = filename[:-4]+'_communities_reciprocal'+'.pkl'
+		subsubtitle = ' reciprocal'
+	else:
+		commFilename = filename[:-4]+'_communities_NOT_reciprocal'+'.pkl'
+		subsubtitle = ' not reciprocal'
+	commDict,colorDict = loadOrSaveColorDict(commFilename,df,columnName,reciprocal)
+
+	######################## OVERWRITE COLOR DICTIONARY WITH SELECTION ########################
+	subsubtitle = " "
+	if columnName == 'reply_to' and colorRepresents == SENTIMENT:
+		colorDict = getSentimentColorDict(df)
+		subsubtitle = ' Sentiment'
+	elif columnName == 'reply_to' and colorRepresents == ACTION_CALL:
+		colorDict = getActionCallColorDict(df)
+		subsubtitle = ' Action calls'
+	elif colorRepresents == NO_COLOR:
+		colorDict = None
+
+	######################## DRAW EACH COMMUNITY SEPARATELY ########################
+	for i in range(len(commDict)):
+		commList = commDict[i]
+		commDf = keepOnlyUsers(df,commList,strictFilterCol=columnName)
+		cDf = calcOverallCentrality(commDf,columnName)
+		overallCenDict = dict(zip(list(cDf['username']),list(cDf['overall'])))
+		overallSorted = cDf.sort_values(by='overall',ascending=False)
+		labelList = list(overallSorted['username'])
+		labelList = labelList[:topN]
+
+		drawGraph(commDf,columnName,title=filename+'- '+subtitle+subsubtitle+'('+str(i)+') ',colorDict=colorDict,sizesDict=overallCenDict,labelList=labelList,sizeScale=100,removeIsolates=False,edgeAlpha=0.05,block=False,saveAndClose=saveAndClose)
+
+def getActionCallColorDict(df):
+	actionList = loadWordBank('action-words.txt')
+	df['actionCount'] = df['tweet'].apply(actionCallColor,actionBank=actionList)
+	colorDict = dict(zip(list(df['username']),list(df['actionCount'])))
+	return colorDict
+
+def loadOrSaveColorDict(commFilename,df,columnName,reciprocal):
+	try:
+		commDict,colorDict = pd.read_pickle(commFilename)
+	except:
+		# print("Generating communities for first time based on: "+filename)
+		commDict = extractCommunities(df,columnName,reciprocal=reciprocal)
+		if commDict == {}:
+			colorDict = None
+		else:
+			colorDict = assignCommunityColors(commDict)
+
+		# Save all community data (blank or filled) into pickle file
+		f = open(commFilename,"wb")
+		pickle.dump([commDict,colorDict],f)
+		f.close()
+	return [commDict,colorDict]
+
+def getSentimentDf(df):
+	posList = loadWordBank('positive-words.txt')
+	negList = loadWordBank('negative-words.txt')
+	df['sentiment score'] = df['tweet'].apply(calcTextSentiment,posBank=posList,negBank=negList)
+	return df[['username','sentiment score']]
+
+def getSentimentColorDict(df):
+	posList = loadWordBank('positive-words.txt')
+	negList = loadWordBank('negative-words.txt')
+	df['sentiment'] = df['tweet'].apply(sentimentColor,posBank=posList,negBank=negList)
+	colorDict = dict(zip(list(df['username']),list(df['sentiment'])))
+	return colorDict
+
+COMMUNITY = 1
+SENTIMENT = 2
+ACTION_CALL = 3
+def drawWholeNetworkFromFile(filename,topN,colorRepresents=None,reciprocal=False,saveAndClose=False):
+	######################## LOAD THE DATA #######################
+	if ".csv" in filename:
+		df = pd.read_csv(filename)
+	else:
+		df = pd.read_json(filename)
+
+	columnName = checkRepliesOrFollows(df)
+	if columnName == 'reply_to':
+		subtitle = 'Replies.'
+		df['reply_to'] = df['reply_to'].apply(turn2LiteralKeysReply)
+
+	elif columnName == 'followings':
+		subtitle = 'Follows, '
+		df['followings'] = df['followings'].apply(turn2LiteralKeys)
+
+	######################## PROCESS AND VISUALISE #######################
+	subsubtitle = ' '
+
+	if columnName == 'reply_to' and colorRepresents == SENTIMENT:
+		colorDict = getSentimentColorDict(df)
+		subsubtitle = ' Sentiment'
+	elif columnName == 'reply_to' and colorRepresents == ACTION_CALL:
+		colorDict = getActionCallColorDict(df)
+		subsubtitle = ' Action calls'
+	elif colorRepresents == COMMUNITY:
+		if reciprocal == True:
+			commFilename = filename[:-4]+'_communities_reciprocal'+'.pkl'
+			subsubtitle = " Color: communities, reciprocal"
+		else:
+			commFilename = filename[:-4]+'_communities_NOT_reciprocal'+'.pkl'
+			subsubtitle = " Color: communities, NOT reciprocal"
+		commDict,colorDict = loadOrSaveColorDict(commFilename,df,columnName,reciprocal)
+	elif colorRepresents == NO_COLOR:
+		colorDict = None
+
+	cDf = calcOverallCentrality(df,columnName)
+	overallCenDict = dict(zip(list(cDf['username']),list(cDf['overall'])))
+	overallSorted = cDf.sort_values(by='overall',ascending=False)
+	labelList = list(overallSorted['username'])
+	labelList = labelList[:topN]
+
+	drawGraph(df,columnName,title=filename+'- '+subtitle+subsubtitle,colorDict=colorDict,sizesDict=overallCenDict,labelList=labelList,sizeScale=100,minSize=10,removeIsolates=False,edgeAlpha=0.05,block=False,saveAndClose=saveAndClose)
+
+
+def drawEgoFromFile(filename,user,colorRepresents=None,reciprocal=False,saveAndClose=False):
+
+	######################## LOAD THE DATA #######################
+	if ".csv" in filename:
+		df = pd.read_csv(filename)
+	else:
+		df = pd.read_json(filename)
+
+	columnName = checkRepliesOrFollows(df)
+	if columnName == 'reply_to':
+		titleTo = 'Egocentric: Who replies to '+user
+		titleFrom = 'Egocentric: Who '+user+' replies to.'
+	elif columnName == 'followings':
+		titleTo = 'Egocentric: Who follows '+user
+		titleFrom = 'Egocentric: Who '+user+' follows.'
+	######################## PROCESS DATA AND VISUALISE ########################
+	subsubtitle = ' '
+	if columnName == 'reply_to' and colorRepresents == SENTIMENT:
+		colorDict = getSentimentColorDict(df)
+		subsubtitle = ' Color: Sentiment'
+	elif columnName == 'reply_to' and colorRepresents == ACTION_CALL:
+		colorDict = getActionCallColorDict(df)
+		subsubtitle = ' Color: Action calls'
+	elif colorRepresents == COMMUNITY:
+		if reciprocal == True:
+			commFilename = filename[:-4]+'_communities_reciprocal'+'.pkl'
+			subsubtitle = " Color: communities, reciprocal"
+		else:
+			commFilename = filename[:-4]+'_communities_NOT_reciprocal'+'.pkl'
+			subsubtitle = " Color: communities, NOT reciprocal"
+		commDict,colorDict = loadOrSaveColorDict(commFilename,df,columnName,reciprocal)
+	elif colorRepresents == NO_COLOR:
+		colorDict = None
+
+	if columnName == 'reply_to':
+		df[columnName] = df[columnName].apply(turn2LiteralKeysReply)
+	egoDf = getEgocentricDf(df,columnName,user)
+	ego_to = egoDf.loc[egoDf['username'] != user]
+	ego_from = egoDf.loc[egoDf['username'] == user]
+
+	# INCOMING CONNECTIONS
+	drawGraph(ego_to,columnName,title=titleTo+subsubtitle,block=False,colorDict=colorDict,minSize=10,sizesDict={user:3},labelList=list(egoDf['username'])+[user],edgeAlpha=0.1,saveAndClose=saveAndClose)
+
+	# OUTGOING CONNECTIONS
+	edgeDict = mergeDictCol(egoDf[columnName])
+	edgeList = list(edgeDict.keys())
+	labelList = [edge[1] for edge in edgeList]	# Retrieve the 'to'
+	drawGraph(ego_from,columnName,title=titleFrom+subsubtitle,block=False,colorDict=colorDict,minSize=10,sizesDict={user:3},labelList=labelList+[user],edgeAlpha=0.1,saveAndClose=saveAndClose)
+
+######################## FUNCTIONS #######################
+def checkRepliesOrFollows(fileDf):
+	headingsList = list(fileDf.columns)
+	if 'reply_to' in headingsList: return 'reply_to'
+	elif 'followings' in headingsList: return 'followings'
+	else: return 'INVALID'
 
 def calcOverallCentrality(df,columnName):
 	edgeDict = mergeDictCol(df[columnName])
@@ -265,16 +343,21 @@ def calcOverallCentrality(df,columnName):
 	centralityDf = pd.DataFrame()
 	centralityDf['username'] = list(G.nodes())
 	centralityDf['degree'] = __calcCentrality__(G,centralityType='degree')
-	centralityDf['eigenvector'] = __calcCentrality__(G,centralityType='eigenvector')
+	# centralityDf['eigenvector'] = __calcCentrality__(G,centralityType='eigenvector')
 	centralityDf['closeness'] = __calcCentrality__(G,centralityType='closeness')
 	centralityDf['betweenness'] = __calcCentrality__(G,centralityType='betweenness')
 
-	centralityDf['degree'] = (centralityDf['degree'] - min(list(centralityDf['degree'])))/(max(list(centralityDf['degree']))-min(list(centralityDf['degree'])))
-	centralityDf['eigenvector'] = (centralityDf['eigenvector'] - min(list(centralityDf['eigenvector'])))/(max(list(centralityDf['eigenvector']))-min(list(centralityDf['eigenvector'])))
-	centralityDf['closeness'] = (centralityDf['closeness'] - min(list(centralityDf['closeness'])))/(max(list(centralityDf['closeness']))-min(list(centralityDf['closeness'])))
-	centralityDf['betweenness'] = (centralityDf['betweenness'] - min(list(centralityDf['betweenness'])))/(max(list(centralityDf['betweenness']))-min(list(centralityDf['betweenness'])))
+	# print(centralityDf)
+ 
+	if (max(list(centralityDf['degree'])) != min(list(centralityDf['degree']))):
+		centralityDf['degree'] = (centralityDf['degree'] - min(list(centralityDf['degree'])))/(max(list(centralityDf['degree']))-min(list(centralityDf['degree'])))
+	# centralityDf['eigenvector'] = (centralityDf['eigenvector'] - min(list(centralityDf['eigenvector'])))/(max(list(centralityDf['eigenvector']))-min(list(centralityDf['eigenvector'])))
+	if (max(list(centralityDf['closeness'])) != min(list(centralityDf['closeness']))):
+		centralityDf['closeness'] = (centralityDf['closeness'] - min(list(centralityDf['closeness'])))/(max(list(centralityDf['closeness']))-min(list(centralityDf['closeness'])))
+	if (max(list(centralityDf['betweenness'])) != min(list(centralityDf['betweenness']))):
+		centralityDf['betweenness'] = (centralityDf['betweenness'] - min(list(centralityDf['betweenness'])))/(max(list(centralityDf['betweenness']))-min(list(centralityDf['betweenness'])))
 
-	centralityDf['overall'] = centralityDf['degree'] + centralityDf['eigenvector'] + centralityDf['closeness'] + centralityDf['betweenness']
+	centralityDf['overall'] = centralityDf['degree'] + centralityDf['closeness'] + centralityDf['betweenness'] #+ centralityDf['eigenvector'] 
 
 	return centralityDf
 
@@ -290,6 +373,7 @@ def assignCommunityColors(communitiesDict,maxCommNum=None):
 
 	# Prep colors from color map chosen
 	cMapping = cm.get_cmap('hsv',numGroups+1)	# To avoid color map looping.
+	print(numGroups)
 	colorList = cMapping(range(numGroups+1))
 
 	colorDict = dict()
@@ -320,7 +404,7 @@ def restructureFollowingsDf(followerData0):
 	return restructuredDf
 
 # Consider individuals as communities. To remove isolates, use the function you wrote.
-def extractCommunities(df,columnName,reciprocal=False,individualsAsCommunities=True):
+def extractCommunities(df,columnName,reciprocal=False,individualsAsCommunities=False):
 
 	nodes = list(df['username'])
 	edges = mergeDictCol(df[columnName])
@@ -527,7 +611,7 @@ def listTopCentralityUsers(df,columnName,numUsers=None,centralityType='degree'):
 
 	return listTopUsers
 
-def drawGraph(df,columnName,title=None,removeIsolates=False,labelList=None,colorDict=None,minSize=20,sizesDict=None,sizeScale=100,edgesDict=None,widthScale=1,edgeAlpha=0.5,block=True,saveAndClose=False):
+def drawGraph(df,columnName,title=None,removeIsolates=False,labelList=None,colorDict=None,minSize=20,sizesDict=None,sizeScale=100,edgesDict=None,widthScale=1,edgeAlpha=0.5,block=False,saveAndClose=False):
 
 	nodes = list(df['username'])
 	edges = mergeDictCol(df[columnName])
@@ -547,7 +631,12 @@ def drawGraph(df,columnName,title=None,removeIsolates=False,labelList=None,color
 	edgeWidths = None
 
 	if labelList is not None: labels = __calcLabels__(G,labelList)
-	if colorDict is not None: nodeColors = __calcColors__(G,colorDict)
+
+	if colorDict is not None:
+		nodeColors = __calcColors__(G,colorDict)
+	else:
+		nodeColors = 'gray'	# If no color dictionary specified, set nodes to gray
+
 	if sizesDict is not None: nodeSizes = __calcSizes__(G,sizesDict,sizeScale,minSize=minSize)
 	if edgesDict is not None:
 		edgeWidths = __calcEdgeWidth__(G,edgesDict,widthScale)
@@ -598,5 +687,3 @@ def __filterDictEgo__(currLinkDict,user):
 
 def turn2LiteralKeysReply(dictionary):
 	return eval(dictionary)
-
-
