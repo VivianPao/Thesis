@@ -207,11 +207,15 @@ def getActionCallColorDict(df):
 	return colorDict
 
 def loadOrSaveColorDict(commFilename,df,columnName,reciprocal):
+	# print(df)
 	try:
 		commDict,colorDict = pd.read_pickle(commFilename)
 	except:
+		# print(df[columnName])
+		# print(columnName)
 		# print("Generating communities for first time based on: "+filename)
 		commDict = extractCommunities(df,columnName,reciprocal=reciprocal)
+		# print("*****************************************")
 		if commDict == {}: colorDict = None
 		else: colorDict = assignCommunityColors(commDict)
 
@@ -295,9 +299,11 @@ def drawEgoFromFile(filename,user,colorRepresents=None,reciprocal=False,saveAndC
 	if columnName == 'reply_to':
 		titleTo = 'Egocentric: Who replies to '+user+'.'
 		titleFrom = 'Egocentric: Who '+user+' replies to.'
+		df['reply_to'] = df['reply_to'].apply(turn2LiteralKeysReply)
 	elif columnName == 'followings':
 		titleTo = 'Egocentric: Who follows '+user+'.'
 		titleFrom = 'Egocentric: Who '+user+' follows.'
+		df['followings'] = df['followings'].apply(turn2LiteralKeysReply)
 	######################## PROCESS DATA AND VISUALISE ########################
 	subsubtitle = ' '
 	if columnName == 'reply_to' and colorRepresents == SENTIMENT:
@@ -317,8 +323,6 @@ def drawEgoFromFile(filename,user,colorRepresents=None,reciprocal=False,saveAndC
 	elif colorRepresents == NO_COLOR:
 		colorDict = None
 
-	if columnName == 'reply_to':
-		df[columnName] = df[columnName].apply(turn2LiteralKeysReply)
 	egoDf = getEgocentricDf(df,columnName,user)
 	ego_to = egoDf.loc[egoDf['username'] != user]
 	ego_from = egoDf.loc[egoDf['username'] == user]
@@ -430,9 +434,9 @@ def extractCommunities(df,columnName,reciprocal=False,individualsAsCommunities=F
 	groupAllocationList = list(partition.values())
 	
 	# If no groups detected, return empty dictionary
-	# if len(groupAllocationList) == 0:
-	# 	print("\nNo communities found :(\n")
-	# 	return dict()
+	if len(groupAllocationList) == 0:
+		# print("\nNo communities found :(\n")
+		return dict()
 
 	numGroups = max(groupAllocationList)+1
 
