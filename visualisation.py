@@ -1,23 +1,28 @@
 
-# FINAL_fns
 import pickle
 from ast import literal_eval
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import networkx as nx
 import pandas as pd
 import numpy as np
 from collections import ChainMap 
-import matplotlib.cm as cm
 import community as community_louvain
-from scraping import *
 
 REPLIES = 0
 FOLLOWS = 1
 INVALID = -1
 
-# Whole network over time
+# Constants: Number of characters in a date string
 MONTHLY_CHAR = 7
 FULL_DATE_CHAR = 19
+
+# Color options for nodes
+COMMUNITY = 1
+SENTIMENT = 2
+ACTION_CALL = 3
+NO_COLOR = 4
+
 def drawActivityOverTime(filename,saveAndClose=False,block=False):
 	if ".csv" in filename:
 		df = pd.read_csv(filename)
@@ -147,11 +152,6 @@ def loadWordBank(filename):
 	f.close()
 	return wordBank
 
-# DRAWING FILE
-COMMUNITY = 1
-SENTIMENT = 2
-ACTION_CALL = 3
-NO_COLOR = 4
 def drawCommFromFile(filename,topN,colorRepresents=None,reciprocal=False,saveAndClose=False,block=False):
 	
 	######################## LOAD THE DATA #######################
@@ -238,9 +238,6 @@ def getSentimentColorDict(df):
 	colorDict = dict(zip(list(df['username']),list(df['sentiment'])))
 	return colorDict
 
-COMMUNITY = 1
-SENTIMENT = 2
-ACTION_CALL = 3
 def drawWholeNetworkFromFile(filename,topN,colorRepresents=None,reciprocal=False,saveAndClose=False,block=False):
 	######################## LOAD THE DATA #######################
 	if ".csv" in filename:
@@ -560,7 +557,6 @@ def __calcLabels__(G,labelList):
 	labels = {username: username for username in G.nodes() if username in labelList}
 	return labels
 
-########## PUBLIC
 
 def removeUsers(df,removalList,strictFilterCol=None):
 	if strictFilterCol == None:
